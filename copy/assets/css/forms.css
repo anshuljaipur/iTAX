@@ -1,0 +1,47 @@
+/**
+ * ============================================================================
+ * CA Pro Tax Suite - Form & Input Styles
+ * ============================================================================
+ */
+
+.form-control, .form-select {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+[data-bs-theme="dark"] .form-control, 
+[data-bs-theme="dark"] .form-select {
+    background-color: #2b2b2b;
+    border-color: #444;
+    color: #fff;
+}
+
+[data-bs-theme="dark"] .form-control:focus, 
+[data-bs-theme="dark"] .form-select:focus {
+    background-color: #333;
+    border-color: #0d6efd;
+}
+
+/* Highlight Required Fields visually */
+label.form-label:has(+ input[required])::after,
+label.form-label:has(+ select[required])::after {
+    content: " *";
+    color: #dc3545;
+}
+
+textarea {
+    resize: vertical;
+}
+
+/* specific style for amounts */
+input[type="number"] {
+    text-align: right;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 600;
+}

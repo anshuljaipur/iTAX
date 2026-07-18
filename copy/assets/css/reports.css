@@ -1,0 +1,61 @@
+/**
+ * ============================================================================
+ * CA Pro Tax Suite - Reports & Print Styles
+ * ============================================================================
+ */
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+[data-bs-theme="dark"] .table {
+    --bs-table-color: #e0e0e0;
+    --bs-table-bg: transparent;
+    --bs-table-border-color: #444;
+    --bs-table-hover-bg: rgba(255,255,255,0.05);
+}
+
+[data-bs-theme="dark"] .table-light {
+    --bs-table-bg: #2b2b2b;
+    --bs-table-color: #fff;
+}
+
+/* --- Print Media Query --- */
+@media print {
+    body {
+        background: #fff;
+        color: #000;
+    }
+    
+    #sidebar, header, .btn, #toastContainer, .card-footer {
+        display: none !important;
+    }
+
+    #main-content {
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+    }
+
+    .glass-panel {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    #reportOutput, #compResults {
+        width: 100%;
+        page-break-inside: avoid;
+    }
+
+    @page {
+        margin: 1cm;
+    }
+}

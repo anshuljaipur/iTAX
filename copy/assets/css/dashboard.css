@@ -1,0 +1,40 @@
+/**
+ * ============================================================================
+ * CA Pro Tax Suite - Dashboard Styles
+ * ============================================================================
+ */
+
+/* --- KPI Cards (Tally / Zoho Style Borders) --- */
+.border-left-primary {
+    border-left: 4px solid var(--primary-color) !important;
+}
+.border-left-success {
+    border-left: 4px solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 4px solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 4px solid #f6c23e !important;
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+
+.text-xs {
+    font-size: .8rem;
+}
+
+/* --- Dark Mode adjustments for Cards --- */
+[data-bs-theme="dark"] .card .text-gray-800 {
+    color: #f8f9fa !important;
+}
+[data-bs-theme="dark"] .card .text-gray-300 {
+    color: #495057 !important;
+}

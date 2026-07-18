@@ -1,0 +1,104 @@
+/**
+ * ============================================================================
+ * CA Pro Tax Suite - Global Styles
+ * ============================================================================
+ */
+
+/* --- CSS Variables (Light Theme Default) --- */
+:root {
+    --bg-main: #f4f7f6;
+    --sidebar-bg: #0a2540;
+    --sidebar-text: #a1b0cb;
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --text-primary: #333333;
+    --shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.05);
+    --primary-color: #0d6efd;
+}
+
+/* --- Dark Theme Overrides --- */
+[data-bs-theme="dark"] {
+    --bg-main: #121212;
+    --sidebar-bg: #051320;
+    --sidebar-text: #8898aa;
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
+    --glass-bg: rgba(30, 30, 30, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-primary: #e0e0e0;
+    --shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Global Elements --- */
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- Glassmorphism Core --- */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-soft);
+    transition: all 0.3s ease;
+}
+
+/* --- Sidebar Styling --- */
+#sidebar {
+    background: var(--sidebar-bg);
+    width: 250px;
+    min-width: 250px;      /* Forces the sidebar to never go below 250px */
+    flex-shrink: 0;        /* Prevents flexbox from squishing it */
+    transition: width 0.3s ease;
+    z-index: 1000;
+}
+
+.nav-link {
+    color: var(--sidebar-text);
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 5px;
+}
+
+.nav-link:hover, .nav-link.active {
+    background: var(--sidebar-hover-bg);
+    color: #ffffff;
+    transform: translateX(5px);
+}
+
+/* --- Custom Scrollbar --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+/* --- View Transitions --- */
+.view-section {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

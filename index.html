@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CA Pro - Income Tax & Practice Management</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <script type="module" src="assets/js/firebase-init.js"></script>
+    <script type="module" src="assets/js/auth.js"></script>
+    
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/forms.css">
+    <link rel="stylesheet" href="assets/css/reports.css">
+
+    <style>
+        /* Base SPA Styles for immediate render */
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 15px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+        .hidden { display: none !important; }
+        #app-wrapper { display: flex; width: 100vw; height: 100vh; }
+        #sidebar { width: 250px; background: #0a2540; color: white; transition: all 0.3s; }
+        #main-content { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .nav-link { color: #a1b0cb; cursor: pointer; }
+        .nav-link:hover, .nav-link.active { color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 5px; }
+        /* Dark Mode overrides will be in style.css */
+    </style>
+</head>
+<body>
+    <!-- LOGIN SCREEN (Visible by default) -->
+    <div id="login-screen" class="d-flex align-items-center justify-content-center vh-100 bg-light">
+        <div class="card shadow p-5 text-center" style="max-width: 400px;">
+            <div class="mb-4">
+                <i class="fa-solid fa-chart-pie fa-3x text-primary"></i>
+                <h3 class="mt-3 fw-bold">CA Pro Tax Suite</h3>
+                <p class="text-muted">Professional Tax Computation Engine</p>
+            </div>
+            <button id="btnGoogleLogin" class="btn btn-outline-dark w-100 fw-bold shadow-sm">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" width="20" class="me-2">
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP (Hidden by default) -->
+    <div id="app-container" class="hidden">
+        <!-- Your existing sidebar, navbar, and main content go inside here -->
+        <!-- Add a Logout button in your navbar -->
+        <button id="btnLogout" class="btn btn-sm btn-danger"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
+    </div>
+</body>
+<body data-bs-theme="light">
+
+    <div id="login-screen" class="container-fluid vh-100 d-flex justify-content-center align-items-center bg-light">
+        <div class="col-md-4 col-sm-8 glass-panel p-5">
+            <div class="text-center mb-4">
+                <i class="fa-solid fa-calculator fa-3x text-primary mb-3"></i>
+                <h3 class="fw-bold">CA Pro Tax Suite</h3>
+                <p class="text-muted">Professional Practice Management</p>
+            </div>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label">User Type</label>
+                    <select class="form-select" id="loginRole">
+                        <option value="admin">Admin / Partner</option>
+                        <option value="ca">Chartered Accountant</option>
+                        <option value="accountant">Accountant / Article</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="loginPassword" placeholder="Enter secure password" required>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">Remember Login</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Login to Workspace</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-wrapper" class="hidden">
+        
+        <nav id="sidebar" class="d-flex flex-column p-3">
+            <a href="#" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <i class="fa-solid fa-chart-pie fa-2x me-2"></i>
+                <span class="fs-4 fw-bold">CA Pro</span>
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item"><a class="nav-link active" data-view="dashboard"><i class="fa-solid fa-house me-2"></i> Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" data-view="clients"><i class="fa-solid fa-users me-2"></i> Client Master</a></li>
+                <li class="nav-item"><a class="nav-link" data-view="transactions"><i class="fa-solid fa-book-journal-whills me-2"></i> Transactions</a></li>
+                <li class="nav-item"><a class="nav-link" data-view="computation"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Computations</a></li>
+                <li class="nav-item"><a class="nav-link" data-view="reports"><i class="fa-solid fa-chart-line me-2"></i> Reports</a></li>
+                <li class="nav-item"><a class="nav-link" data-view="settings"><i class="fa-solid fa-gear me-2"></i> Settings</a></li>
+            </ul>
+            <hr>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="" width="32" height="32" class="rounded-circle me-2">
+                    <strong>Admin</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="#" id="btn-backup">Backup DB <i class="fa-solid fa-download float-end"></i></a></li>
+                    <li><a class="dropdown-item" href="#" id="btn-restore">Restore DB <i class="fa-solid fa-upload float-end"></i></a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" id="btn-logout">Sign out</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <main id="main-content" class="bg-light">
+            
+            <header class="p-3 mb-3 border-bottom glass-panel m-2 sticky-top z-3">
+                <div class="container-fluid d-grid gap-3 align-items-center" style="grid-template-columns: 1fr 2fr;">
+                    <div class="d-flex align-items-center">
+                        <select id="global-fy-selector" class="form-select w-auto fw-bold text-primary">
+                            <option value="FY2023_24">FY 2023-24 (AY 24-25)</option>
+                            <option value="FY2024_25" selected>FY 2024-25 (AY 25-26)</option>
+                            <option value="FY2025_26">FY 2025-26 (AY 26-27)</option>
+                            <option value="FY2026_27">FY 2026-27 (AY 27-28)</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <form class="w-100 me-3" role="search">
+                            <input type="search" class="form-control" placeholder="Global Search (PAN, Name, Client ID)..." aria-label="Search">
+                        </form>
+                        <button class="btn btn-outline-secondary me-2" id="darkModeToggle"><i class="fa-solid fa-moon"></i></button>
+                    </div>
+                </div>
+            </header>
+
+            <div id="views-container" class="container-fluid p-3">
+                
+                <div id="view-dashboard" class="view-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="fw-bold">Firm Dashboard</h2>
+                        <div>
+                            <button id="btnDashNewClient" class="btn btn-primary shadow-sm"><i class="fa-solid fa-plus"></i> New Client</button>
+                            <button class="btn btn-success shadow-sm"><i class="fa-solid fa-file-pdf"></i> Generate Bulk PDF</button>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="card glass-panel border-left-primary h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">Total Clients</div>
+                                            <div class="h5 mb-0 fw-bold text-gray-800" id="dash-total-clients">0</div>
+                                        </div>
+                                        <div class="col-auto"><i class="fa-solid fa-users fa-2x text-gray-300"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card glass-panel border-left-warning h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">Pending Returns</div>
+                                            <div class="h5 mb-0 fw-bold text-gray-800" id="dash-pending-returns">0</div>
+                                        </div>
+                                        <div class="col-auto"><i class="fa-solid fa-clock fa-2x text-gray-300"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card glass-panel border-left-success h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs fw-bold text-success text-uppercase mb-1">Tax Payable (Firm Wide)</div>
+                                            <div class="h5 mb-0 fw-bold text-gray-800" id="dash-tax-payable">₹ 0.00</div>
+                                        </div>
+                                        <div class="col-auto"><i class="fa-solid fa-indian-rupee-sign fa-2x text-gray-300"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card glass-panel border-left-info h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs fw-bold text-info text-uppercase mb-1">Refund Due</div>
+                                            <div class="h5 mb-0 fw-bold text-gray-800" id="dash-refund-due">₹ 0.00</div>
+                                        </div>
+                                        <div class="col-auto"><i class="fa-solid fa-money-bill-transfer fa-2x text-gray-300"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-lg-8">
+                            <div class="card glass-panel mb-4 shadow-sm">
+                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                    <h6 class="m-0 fw-bold text-primary">Income Distribution Overview</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="incomeDistributionChart" style="height: 300px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card glass-panel mb-4 shadow-sm">
+                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                    <h6 class="m-0 fw-bold text-primary">Tax Regime Preference</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="regimePieChart" style="height: 300px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-clients" class="view-section hidden">
+                    <h2 class="fw-bold mb-4">Client Master</h2>
+                    <ul class="nav nav-tabs mb-3" id="clientTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="client-list-tab" data-bs-toggle="tab" data-bs-target="#client-list" type="button" role="tab">Client Directory</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="client-add-tab" data-bs-toggle="tab" data-bs-target="#client-add" type="button" role="tab">Add / Edit Client</button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="clientTabsContent">
+                        <div class="tab-pane fade show active" id="client-list" role="tabpanel">
+                            <div class="card glass-panel p-3">
+                                <table class="table table-hover align-middle" id="clientTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Client ID</th>
+                                            <th>PAN</th>
+                                            <th>Name</th>
+                                            <th>Status</th>
+                                            <th>Mobile</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clientTableBody">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="client-add" role="tabpanel">
+                            <div class="card glass-panel p-4">
+                                <form id="clientForm">
+                                    <div class="row g-3">
+                                        <h5 class="text-primary border-bottom pb-2">Primary Details</h5>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Client ID (Auto)</label>
+                                            <input type="text" class="form-control" id="clientId" readonly>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">PAN *</label>
+                                            <input type="text" class="form-control text-uppercase" id="clientPan" required maxlength="10" placeholder="ABCDE1234F">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Aadhaar</label>
+                                            <input type="text" class="form-control" id="clientAadhaar" placeholder="[Aadhaar Redacted]" maxlength="12">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Status *</label>
+                                            <select class="form-select" id="clientStatus" required>
+                                                <option value="Individual">Individual</option>
+                                                <option value="HUF">HUF</option>
+                                                <option value="Firm">Firm</option>
+                                                <option value="LLP">LLP</option>
+                                                <option value="Company">Company</option>
+                                                <option value="Trust">Trust</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <label class="form-label">Full Name / Entity Name *</label>
+                                            <input type="text" class="form-control" id="clientName" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Father's Name (If Individual)</label>
+                                            <input type="text" class="form-control" id="clientFatherName">
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <label class="form-label">Date of Birth/Incorporation *</label>
+                                            <input type="date" class="form-control" id="clientDob" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Age</label>
+                                            <input type="number" class="form-control" id="clientAge" readonly>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Gender</label>
+                                            <select class="form-select" id="clientGender">
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                                <option value="Transgender">Transgender</option>
+                                                <option value="NA">N/A</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Residential Status</label>
+                                            <select class="form-select" id="clientResStatus">
+                                                <option value="ROR">Resident & Ordinarily Resident (ROR)</option>
+                                                <option value="RNOR">Resident but Not Ordinarily Resident (RNOR)</option>
+                                                <option value="NRI">Non-Resident (NRI)</option>
+                                            </select>
+                                        </div>
+
+                                        <h5 class="text-primary border-bottom pb-2 mt-4">Contact & Bank Details</h5>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Mobile Number</label>
+                                            <input type="tel" class="form-control" id="clientMobile">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Email Address</label>
+                                            <input type="email" class="form-control" id="clientEmail">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Bank IFSC</label>
+                                            <input type="text" class="form-control text-uppercase" id="clientIfsc">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Full Address</label>
+                                            <textarea class="form-control" id="clientAddress" rows="2"></textarea>
+                                        </div>
+                                        
+                                        <div class="col-12 text-end mt-4">
+                                            <button type="button" class="btn btn-outline-danger me-2" id="btnCancelEdit">Cancel Edit</button>
+                                            <button type="reset" class="btn btn-secondary">Clear Form</button>
+                                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Client Data</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-transactions" class="view-section hidden"><h2>Transactions Engine</h2><p>Loads via transactions.js</p></div>
+                <div id="view-computation" class="view-section hidden"><h2>Tax Computations</h2><p>Loads via taxengine.js</p></div>
+                <div id="view-reports" class="view-section hidden"><h2>System Reports</h2><p>Loads via reports.js</p></div>
+                <div id="view-settings" class="view-section hidden"><h2>Firm Settings</h2><p>Loads via settings.js</p></div>
+                
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+    <!-- ==================== EXTERNAL SCRIPTS (CDNs) ==================== -->
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Dexie.js (Must load FIRST before database.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jsPDF & AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- SheetJS (Excel Export/Import) -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <!-- ==================== INTERNAL SCRIPTS ==================== -->
+    <!-- database.js MUST be the very first internal script -->
+    <script type="module" src="assets/js/database.js"></script>
+    
+    <!-- The rest of the application -->
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/clients.js"></script>
+    <script src="assets/js/transactions.js"></script>
+    <script src="assets/js/taxengine.js"></script>
+    <script src="assets/js/reports.js"></script>
+    <script src="assets/js/capitalgain.js"></script>
+    <script src="assets/js/settings.js"></script>
+    <script src="assets/js/backup.js"></script>
+
+</body>
+</html>
