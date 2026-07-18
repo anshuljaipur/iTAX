@@ -8,7 +8,7 @@
  */
 
 // 1. Firebase Auth Imports (Must be at the top level of the module)
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const auth = getAuth();
 
@@ -23,6 +23,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const globalFySelector = document.getElementById('global-fy-selector');
     const btnLogout = document.getElementById('btn-logout');
 
+    // --- Google Sign-In Trigger ---
+    const btnGoogleLogin = document.getElementById('btnGoogleLogin');
+    if (btnGoogleLogin) {
+        btnGoogleLogin.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                // This opens the Google login popup
+                await signInWithPopup(auth, provider);
+                // Note: We don't need to do anything else here! 
+                // Your existing onAuthStateChanged observer will automatically detect the login and load the workspace.
+            } catch (error) {
+                console.error("Google Sign-in Error:", error);
+                showToast("Login failed: " + error.message, 'danger');
+            }
+        });
+    }
+    
     // --- Application State ---
     const AppState = {
         currentUserRole: null,
