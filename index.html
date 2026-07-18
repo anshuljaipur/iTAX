@@ -61,25 +61,20 @@
                 <h3 class="fw-bold">CA Pro Tax Suite</h3>
                 <p class="text-muted">Professional Practice Management</p>
             </div>
-            <form id="loginForm">
-                <div class="mb-3">
-                    <label class="form-label">User Type</label>
-                    <select class="form-select" id="loginRole">
-                        <option value="admin">Admin / Partner</option>
-                        <option value="ca">Chartered Accountant</option>
-                        <option value="accountant">Accountant / Article</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-control" id="loginPassword" placeholder="Enter secure password" required>
-                </div>
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="rememberMe">
-                    <label class="form-check-label" for="rememberMe">Remember Login</label>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 fw-bold">Login to Workspace</button>
-            </form>
+            <!-- Replace your old form contents with this -->
+<form id="loginForm">
+    <div class="text-center mb-4">
+        <p class="text-muted">Sign in securely to access your workspace.</p>
+    </div>
+    
+    <div class="d-grid gap-2">
+        <button type="button" id="btnGoogleLogin" class="btn btn-lg btn-outline-dark d-flex align-items-center justify-content-center">
+            <!-- Official Google G Logo -->
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 24px; margin-right: 12px;">
+            Sign in with Google
+        </button>
+    </div>
+</form>
         </div>
     </div>
 
