@@ -4,9 +4,9 @@
  * ============================================================================
  */
 import { db } from './firebase-init.js';
-import { 
-    collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Added missing getDoc and setDoc imports to prevent further saving errors
+import { collection, getDocs, getDoc, setDoc, addDoc, updateDoc, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Helper to securely get the active user's database path
 function getUserPath() {
@@ -39,6 +39,23 @@ window.DB = {
             const snap = await getDoc(docRef);
             return snap.exists() ? snap.data() : null;
         },
+        
+        // --- NEW FUNCTION ADDED HERE ---
+        // Resolves the "getClientByPan is not a function" error in clients.js
+        async getClientByPan(panNumber) {
+            if (!window.currentUserUid) return null;
+            const colRef = collection(db, `${getUserPath()}/clients`);
+            const q = query(colRef, where("pan", "==", panNumber));
+            const snapshot = await getDocs(q);
+            
+            if (!snapshot.empty) {
+                // Returns the first matching client's data
+                return snapshot.docs[0].data();
+            }
+            return null; // No client found with this PAN
+        },
+        // -------------------------------
+        
         async deleteClient(id) {
             await deleteDoc(doc(db, `${getUserPath()}/clients`, String(id)));
             await window.DB.Transactions.deleteTransactionsByClient(id);
