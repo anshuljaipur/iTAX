@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancelEdit = document.getElementById('btnCancelEdit');
 
     // --- Global Event Listener for Tab Navigation ---
-    // Triggered by app.js when the user clicks the "Client Master" sidebar link
     document.addEventListener('viewChanged', (e) => {
         if (e.detail.view === 'clients') {
             refreshClientTable();
@@ -53,22 +52,31 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             try {
-                // 2. Push to Firebase via our bridge function in database.js
+                // 2. STRICT DUPLICATE PAN VALIDATION (For New Clients Only)
+                if (!clientData.id) {
+                    const existingClient = await window.DB.Clients.getClientByPan(clientData.pan);
+                    if (existingClient) {
+                        window.showToast(`Error: A client with PAN ${clientData.pan} already exists!`, 'danger');
+                        return; // 🛑 Stops the save completely
+                    }
+                }
+
+                // 3. Push to Firebase via our bridge function in database.js
                 await window.DB.Clients.saveClient(clientData);
                 
                 window.showToast('Client data saved successfully!', 'success');
                 clientForm.reset();
                 document.getElementById('clientId').value = ''; // clear hidden id
 
-                // 3. Force UI back to the Directory Tab
+                // 4. Force UI back to the Directory Tab
                 const listTabEl = document.getElementById('client-list-tab');
                 if (listTabEl) {
                     const listTab = new bootstrap.Tab(listTabEl);
                     listTab.show();
                 }
 
-                // 4. Pull the fresh data from the cloud and redraw the table!
-                refreshClientTable();
+                // 5. Pull the fresh data from the cloud and redraw the table!
+                await refreshClientTable();
 
             } catch (error) {
                 console.error("Error saving client:", error);
@@ -84,12 +92,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Fetch directly from Firestore
             const clients = await window.DB.Clients.getAllClients();
+            console.log("Firebase Data Pulled:", clients); // <-- Debugging line
+            
             clientTableBody.innerHTML = ''; // Clear old rows
 
             if (!clients || clients.length === 0) {
                 clientTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No clients found. Add a new client.</td></tr>';
                 
-                // Update dashboard counter if it exists
+                // Update dashboard counter
                 const dashCounter = document.getElementById('dash-total-clients');
                 if (dashCounter) dashCounter.innerText = '0';
                 return;
@@ -104,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="fw-bold text-secondary">${client.id}</td>
-                    <td class="text-uppercase fw-bold">${client.pan}</td>
+                    <td class="text-uppercase fw-bold text-primary">${client.pan}</td>
                     <td>${client.name}</td>
                     <td><span class="badge bg-primary">${client.status}</span></td>
                     <td>${client.mobile || '-'}</td>
@@ -121,13 +131,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Global Edit Function (Fired by inline onclick in the table) ---
+    // --- Global Edit Function ---
     window.editClient = async (id) => {
         try {
             const client = await window.DB.Clients.getClientById(id);
             if (!client) return;
 
-            // Populate form fields
             document.getElementById('clientId').value = client.id;
             document.getElementById('clientPan').value = client.pan || '';
             document.getElementById('clientAadhaar').value = client.aadhaar || '';
@@ -136,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('clientFatherName').value = client.fatherName || '';
             document.getElementById('clientDob').value = client.dob || '';
             
-            // Trigger age calculation manually after setting DOB
             if (client.dob) {
                 const event = new Event('change');
                 document.getElementById('clientDob').dispatchEvent(event);
@@ -149,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('clientIfsc').value = client.ifsc || '';
             document.getElementById('clientAddress').value = client.address || '';
 
-            // Switch UI to the Add/Edit Tab
             const addTabEl = document.getElementById('client-add-tab');
             if (addTabEl) {
                 const addTab = new bootstrap.Tab(addTabEl);
@@ -168,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await window.DB.Clients.deleteClient(id);
                 window.showToast('Client deleted successfully.', 'info');
-                refreshClientTable(); // Redraw table
+                refreshClientTable(); 
             } catch (error) {
                 console.error("Error deleting client:", error);
                 window.showToast('Error deleting client.', 'danger');
@@ -180,9 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnCancelEdit) {
         btnCancelEdit.addEventListener('click', () => {
             if (clientForm) clientForm.reset();
-            document.getElementById('clientId').value = ''; // clear hidden ID
+            document.getElementById('clientId').value = '';
             
-            // Jump back to directory
             const listTabEl = document.getElementById('client-list-tab');
             if (listTabEl) {
                 const listTab = new bootstrap.Tab(listTabEl);
