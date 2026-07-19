@@ -14,7 +14,6 @@ const auth = getAuth();
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
-    const loginForm = document.getElementById('loginForm');
     const loginScreen = document.getElementById('login-screen');
     const appWrapper = document.getElementById('app-wrapper');
     const navLinks = document.querySelectorAll('.nav-link[data-view]');
@@ -22,24 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const darkModeToggle = document.getElementById('darkModeToggle');
     const globalFySelector = document.getElementById('global-fy-selector');
     const btnLogout = document.getElementById('btn-logout');
-
-    // --- Google Sign-In Trigger ---
     const btnGoogleLogin = document.getElementById('btnGoogleLogin');
-    if (btnGoogleLogin) {
-        btnGoogleLogin.addEventListener('click', async () => {
-            const provider = new GoogleAuthProvider();
-            try {
-                // This opens the Google login popup
-                await signInWithPopup(auth, provider);
-                // Note: We don't need to do anything else here! 
-                // Your existing onAuthStateChanged observer will automatically detect the login and load the workspace.
-            } catch (error) {
-                console.error("Google Sign-in Error:", error);
-                showToast("Login failed: " + error.message, 'danger');
-            }
-        });
-    }
-    
+
     // --- Application State ---
     const AppState = {
         currentUserRole: null,
@@ -52,16 +35,22 @@ document.addEventListener('DOMContentLoaded', () => {
      * AUTHENTICATION & INITIALIZATION (Firebase Cloud Auth)
      * ========================================================================
      */
-    
-    // Disable the old manual login form submit
-    if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            showToast('Please use the Google Sign-in button to access the secure workspace.', 'warning');
+
+    // --- Google Sign-In Trigger ---
+    if (btnGoogleLogin) {
+        btnGoogleLogin.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                // Opens the Google login popup
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Google Sign-in Error:", error);
+                showToast("Login failed: " + error.message, 'danger');
+            }
         });
     }
 
-    // Firebase Auth Observer (Replaces old LocalStorage session logic)
+    // --- Firebase Auth Observer (Handles UI Transitions) ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             console.log("User authenticated via Google:", user.uid);
@@ -70,9 +59,15 @@ document.addEventListener('DOMContentLoaded', () => {
             window.currentUserUid = user.uid;
             AppState.currentUserRole = "Admin";
             
-            // Transition UI
-            if (loginScreen) loginScreen.classList.add('hidden');
-            if (appWrapper) appWrapper.classList.remove('hidden');
+            // Transition UI: Hide Login Card, Show Workspace
+            if (loginScreen) {
+                loginScreen.classList.remove('d-flex'); // Strip Bootstrap flex rule
+                loginScreen.style.display = 'none';     // Force hide login
+            }
+            if (appWrapper) {
+                appWrapper.classList.remove('hidden');
+                appWrapper.style.display = 'block';     // Force show workspace
+            }
             
             await initializeWorkspace();
             showToast(`Welcome back! Securely logged in.`, 'success');
@@ -81,18 +76,25 @@ document.addEventListener('DOMContentLoaded', () => {
             window.currentUserUid = null;
             AppState.currentUserRole = null;
             
-            // Reset UI
-            if (appWrapper) appWrapper.classList.add('hidden');
-            if (loginScreen) loginScreen.classList.remove('hidden');
+            // Transition UI: Hide Workspace, Show Login Card
+            if (appWrapper) {
+                appWrapper.style.display = 'none';      // Force hide workspace
+            }
+            if (loginScreen) {
+                loginScreen.style.display = 'flex';     // Force show login
+                loginScreen.classList.add('d-flex');    // Restore centering
+            }
         }
     });
 
-    // Handle Logout
+    // --- Handle Logout ---
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
             e.preventDefault();
             signOut(auth).then(() => {
                 showToast('Successfully logged out.', 'info');
+                // Note: The UI hide/show logic is automatically handled by 
+                // the onAuthStateChanged observer above when it detects the logout.
             }).catch((error) => {
                 console.error("Logout error:", error);
                 showToast('Error logging out.', 'danger');
@@ -188,13 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * ========================================================================
-     * WORKSPACE INITIALIZATION (Updated for Firebase)
+     * WORKSPACE INITIALIZATION
      * ========================================================================
      */
     async function initializeWorkspace() {
         try {
-            // FIXED: Removed old window.DB.core.clients.count() Dexie syntax
-            // Now correctly queries Firestore using the updated module
             if (window.DB && window.DB.Clients) {
                 const clients = await window.DB.Clients.getAllClients();
                 const totalClients = clients.length;
