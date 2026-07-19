@@ -19,15 +19,21 @@ function getUserPath() {
 window.DB = {
     Clients: {
         async addClient(clientData) {
-            clientData.id = Date.now(); // Generate numeric ID to maintain UI compatibility
-            const docRef = doc(db, `${getUserPath()}/clients`, String(clientData.id));
-            await setDoc(docRef, clientData);
-            return clientData.id;
+            // ... existing code ...
         },
         async updateClient(clientData) {
-            const docRef = doc(db, `${getUserPath()}/clients`, String(clientData.id));
-            await setDoc(docRef, clientData, { merge: true });
+            // ... existing code ...
         },
+        
+        async saveClient(clientData) {
+            if (clientData.id) {
+                await window.DB.Clients.updateClient(clientData);
+                return clientData.id;
+            } else {
+                return await window.DB.Clients.addClient(clientData);
+            }
+        },
+       
         async getAllClients() {
             if (!window.currentUserUid) return [];
             const colRef = collection(db, `${getUserPath()}/clients`);
