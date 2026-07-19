@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (appWrapper) {
                 appWrapper.classList.remove('hidden');
-                appWrapper.style.display = 'block';     // Force show workspace
+                appWrapper.style.display = 'flex';     // Force show workspace
             }
             
             await initializeWorkspace();
