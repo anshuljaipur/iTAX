@@ -1,11 +1,9 @@
 /**
  * ============================================================================
- * CA Pro Tax Suite - Firebase Cloud Firestore Engine
+ * CA Pro Tax Suite - Firebase Cloud Firestore Engine (Verbose Debugging)
  * ============================================================================
  */
 import { db } from './firebase-init.js';
-
-// Added missing getDoc and setDoc imports to prevent further saving errors
 import { collection, getDocs, getDoc, setDoc, addDoc, updateDoc, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Helper to securely get the active user's database path
@@ -19,48 +17,63 @@ function getUserPath() {
 window.DB = {
     Clients: {
         async addClient(clientData) {
-            // ... existing code ...
-        },
-        async updateClient(clientData) {
-            // ... existing code ...
+            console.log("[Firebase DB] Starting addClient task...");
+            clientData.id = Date.now(); // Generate numeric ID 
+            const targetPath = `${getUserPath()}/clients`;
+            
+            console.log(`[Firebase DB] Attempting write to -> Path: ${targetPath} | Doc ID: ${clientData.id}`);
+            
+            const docRef = doc(db, targetPath, String(clientData.id));
+            await setDoc(docRef, clientData);
+            
+            console.log("[Firebase DB] Write successful! Data is in the cloud.");
+            return clientData.id;
         },
         
+        async updateClient(clientData) {
+            const docRef = doc(db, `${getUserPath()}/clients`, String(clientData.id));
+            await setDoc(docRef, clientData, { merge: true });
+        },
+
+        // Router function (Bridges old JS to new Firebase logic)
         async saveClient(clientData) {
+            console.log("[Firebase DB] saveClient router triggered. Checking for existing ID...");
             if (clientData.id) {
+                console.log("[Firebase DB] ID found. Routing to updateClient...");
                 await window.DB.Clients.updateClient(clientData);
                 return clientData.id;
             } else {
+                console.log("[Firebase DB] No ID found. Routing to addClient...");
                 return await window.DB.Clients.addClient(clientData);
             }
         },
-       
+
         async getAllClients() {
+            console.log("[Firebase DB] Fetching all clients from cloud...");
             if (!window.currentUserUid) return [];
+            
             const colRef = collection(db, `${getUserPath()}/clients`);
             const snapshot = await getDocs(colRef);
+            
+            console.log(`[Firebase DB] Cloud returned ${snapshot.docs.length} documents.`);
             return snapshot.docs.map(docSnap => docSnap.data());
         },
-        async getClientById(id) {
-            const docRef = doc(db, `${getUserPath()}/clients`, String(id));
-            const snap = await getDoc(docRef);
-            return snap.exists() ? snap.data() : null;
-        },
-        
-        // --- NEW FUNCTION ADDED HERE ---
-        // Resolves the "getClientByPan is not a function" error in clients.js
+
         async getClientByPan(panNumber) {
+            console.log(`[Firebase DB] Validating duplicate PAN: ${panNumber}...`);
             if (!window.currentUserUid) return null;
+            
             const colRef = collection(db, `${getUserPath()}/clients`);
             const q = query(colRef, where("pan", "==", panNumber));
             const snapshot = await getDocs(q);
             
             if (!snapshot.empty) {
-                // Returns the first matching client's data
+                console.log("[Firebase DB] Duplicate PAN found in cloud!");
                 return snapshot.docs[0].data();
             }
-            return null; // No client found with this PAN
+            console.log("[Firebase DB] PAN is unique.");
+            return null;
         },
-        // -------------------------------
         
         async deleteClient(id) {
             await deleteDoc(doc(db, `${getUserPath()}/clients`, String(id)));
@@ -70,7 +83,7 @@ window.DB = {
     
     Transactions: {
         async saveTransaction(txData) {
-            if (!txData.id) txData.id = Date.now(); // Generate numeric ID if new
+            if (!txData.id) txData.id = Date.now();
             const docRef = doc(db, `${getUserPath()}/transactions`, String(txData.id));
             await setDoc(docRef, txData, { merge: true });
             return txData.id;
@@ -80,8 +93,6 @@ window.DB = {
             const colRef = collection(db, `${getUserPath()}/transactions`);
             const q = query(colRef, where("clientId", "==", Number(clientId)), where("fy", "==", fy));
             const snapshot = await getDocs(q);
-            
-            // Sort by date before returning
             const results = snapshot.docs.map(docSnap => docSnap.data());
             return results.sort((a, b) => new Date(a.date) - new Date(b.date));
         },
@@ -92,8 +103,6 @@ window.DB = {
             const colRef = collection(db, `${getUserPath()}/transactions`);
             const q = query(colRef, where("clientId", "==", Number(clientId)));
             const snapshot = await getDocs(q);
-            
-            // Batch delete all transactions for this client
             const deletePromises = snapshot.docs.map(docSnap => 
                 deleteDoc(doc(db, `${getUserPath()}/transactions`, docSnap.id))
             );
