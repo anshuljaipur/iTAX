@@ -15,27 +15,21 @@ function getUserPath() {
 }
 
 window.DB = {
-    Clients: {
+   Clients: {
         async addClient(clientData) {
             console.log("[Firebase DB] Starting addClient task...");
-            clientData.id = Date.now(); // Generate numeric ID 
+            clientData.id = Date.now(); 
             const targetPath = `${getUserPath()}/clients`;
-            
             console.log(`[Firebase DB] Attempting write to -> Path: ${targetPath} | Doc ID: ${clientData.id}`);
-            
             const docRef = doc(db, targetPath, String(clientData.id));
             await setDoc(docRef, clientData);
-            
             console.log("[Firebase DB] Write successful! Data is in the cloud.");
             return clientData.id;
         },
-        
         async updateClient(clientData) {
             const docRef = doc(db, `${getUserPath()}/clients`, String(clientData.id));
             await setDoc(docRef, clientData, { merge: true });
         },
-
-        // Router function (Bridges old JS to new Firebase logic)
         async saveClient(clientData) {
             console.log("[Firebase DB] saveClient router triggered. Checking for existing ID...");
             if (clientData.id) {
@@ -47,32 +41,40 @@ window.DB = {
                 return await window.DB.Clients.addClient(clientData);
             }
         },
-
         async getAllClients() {
             console.log("[Firebase DB] Fetching all clients from cloud...");
             if (!window.currentUserUid) return [];
-            
             const colRef = collection(db, `${getUserPath()}/clients`);
             const snapshot = await getDocs(colRef);
-            
             console.log(`[Firebase DB] Cloud returned ${snapshot.docs.length} documents.`);
             return snapshot.docs.map(docSnap => docSnap.data());
         },
-
         async getClientByPan(panNumber) {
             console.log(`[Firebase DB] Validating duplicate PAN: ${panNumber}...`);
             if (!window.currentUserUid) return null;
-            
             const colRef = collection(db, `${getUserPath()}/clients`);
             const q = query(colRef, where("pan", "==", panNumber));
             const snapshot = await getDocs(q);
-            
             if (!snapshot.empty) {
                 console.log("[Firebase DB] Duplicate PAN found in cloud!");
                 return snapshot.docs[0].data();
             }
             console.log("[Firebase DB] PAN is unique.");
             return null;
+        },
+
+        // ---> THE RESTORED FUNCTION <---
+        async getClientById(id) {
+            console.log(`[Firebase DB] Fetching single client ID: ${id}...`);
+            if (!window.currentUserUid) return null;
+            const docRef = doc(db, `${getUserPath()}/clients`, String(id));
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                return snap.data();
+            } else {
+                console.warn(`[Firebase DB] Client ID ${id} not found!`);
+                return null;
+            }
         },
         
         async deleteClient(id) {
