@@ -98,6 +98,18 @@ window.DB = {
             const results = snapshot.docs.map(docSnap => docSnap.data());
             return results.sort((a, b) => new Date(a.date) - new Date(b.date));
         },
+        
+        // ---> NEW FUNCTION ADDED HERE <---
+        async getAllTransactionsByFY(fy) {
+            console.log(`[Firebase DB] Fetching ALL transactions for FY: ${fy}...`);
+            if (!window.currentUserUid) return [];
+            const colRef = collection(db, `${getUserPath()}/transactions`);
+            const q = query(colRef, where("fy", "==", fy));
+            const snapshot = await getDocs(q);
+            const results = snapshot.docs.map(docSnap => docSnap.data());
+            return results.sort((a, b) => new Date(a.date) - new Date(b.date));
+        },
+
         async deleteTransaction(id) {
             await deleteDoc(doc(db, `${getUserPath()}/transactions`, String(id)));
         },
