@@ -120,15 +120,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getTransactionRegisterData(clientId, fy) {
-        let txs = [];
-        if (clientId === "ALL") {
-            // Need to fetch all and filter manually since indexeddb compound index requires exact match
-            const allTxs = await window.DB.core.transactions.toArray();
-            txs = allTxs.filter(tx => tx.fy === fy);
-        } else {
-            txs = await window.DB.Transactions.getTransactionsByClientAndFY(parseInt(clientId), fy);
+        try {
+            // If a specific client is selected in the dropdown
+            if (clientId && clientId !== "") {
+                return await window.DB.Transactions.getTransactionsByClientAndFY(clientId, fy);
+            } 
+            // If "-- All Clients --" is selected
+            else {
+                return await window.DB.Transactions.getAllTransactionsByFY(fy);
+            }
+        } catch (error) {
+            console.error("Error fetching report data:", error);
+            window.showToast("Failed to fetch report data from cloud.", "danger");
+            return [];
         }
-
+    }
         // Map client data to transactions
         const dataRows = [];
         for (let tx of txs) {
