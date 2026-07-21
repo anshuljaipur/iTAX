@@ -307,3 +307,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+/**
+ * ============================================================================
+ * MOBILE SIDEBAR TOGGLE LOGIC
+ * ============================================================================
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    const mobileBtn = document.getElementById('mobileMenuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    if (mobileBtn && sidebar && overlay) {
+        // Toggle Sidebar on button click
+        mobileBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('show-sidebar');
+            overlay.classList.toggle('show');
+        });
+
+        // Close Sidebar when clicking the dark overlay background
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('show-sidebar');
+            overlay.classList.remove('show');
+        });
+
+        // Optional: Close Sidebar when a nav link is clicked (useful for mobile)
+        const navLinks = sidebar.querySelectorAll('.nav-link, a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('show-sidebar');
+                    overlay.classList.remove('show');
+                }
+            });
+        });
+    }
+});
