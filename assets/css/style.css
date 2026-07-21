@@ -149,3 +149,30 @@ body {
         width: 100% !important;
     }
 }
+
+/* =========================================
+   COMPACT ICON BUTTONS (Header)
+   ========================================= */
+.compact-icon-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0; /* Remove default padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-color: #dee2e6; /* Matches standard bootstrap borders */
+    background-color: #fff;
+    color: #495057;
+}
+
+.compact-icon-btn:hover {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+/* If your site uses a dark mode class (e.g., .dark-mode), you can invert it here */
+body.dark-mode .compact-icon-btn {
+    background-color: #2b3035;
+    border-color: #495057;
+    color: #f8f9fa;
+}
