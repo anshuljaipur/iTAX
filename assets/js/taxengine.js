@@ -158,11 +158,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let tds = sumAmounts(allTxs.filter(tx => tx.incomeHead === 'TDS'));
         let salaryStdDed = inc.salary > taxRules.standardDeduction ? taxRules.standardDeduction : inc.salary;
         
+        // Helper to get exact calculated age
+        const clientAge = getClientAge(currentClient);
+
         // --- OLD REGIME MATH ---
         let oldNetSal = inc.salary > 0 ? inc.salary - salaryStdDed : 0;
         let oldGti = oldNetSal + net_hp + inc.b_44ad + inc.b_speculation + inc.b_normal + inc.stcg + inc.ltcg + inc.os_interest + inc.os_dividend + inc.os_normal;
         let oldTotalInc = Math.max(0, oldGti - totalDeductions);
-        let oldTax = calculateTaxFromSlabs(oldTotalInc, determineOldSlab(currentClient.age, taxRules.oldRegime));
+        let oldTax = calculateTaxFromSlabs(oldTotalInc, determineOldSlab(clientAge, taxRules.oldRegime));
         let oldRebate = calculateRebate(oldTotalInc, oldTax, taxRules.oldRegime.rebate87A);
         let oldPostRebate = oldTax - oldRebate;
         let oldCess = oldPostRebate * taxRules.cessRate; 
@@ -196,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fyParts = currentFY.replace('FY', '').split('_'); 
         const ayStr = `${parseInt(fyParts[0]) + 1}-${(parseInt(fyParts[1]) + 1).toString().padStart(2, '0')}`;
         const f = (amt) => amt.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        const clientAge = getClientAge(currentClient);
 
         table.innerHTML = `
             <thead class="table-light">
@@ -208,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
                 <tr>
                     <td colspan="2"><b>Status:</b> ${currentClient.status}</td>
-                    <td><b>Age/DOB:</b> ${currentClient.age} (${currentClient.dob})</td>
+                    <td><b>Age/DOB:</b> ${clientAge} Yrs (${currentClient.dob || 'N/A'})</td>
                 </tr>
                 <tr class="bg-secondary text-white">
                     <th width="60%">PARTICULARS</th>
@@ -308,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const pan = currentClient.pan || "XXXXXXXXXX";
             const maskedPan = pan.length >= 6 ? pan.substring(0, pan.length - 6) + "******" : "******";
             const fileName = `${safeName}_${maskedPan}_AY-${ayStr}_Computation.pdf`;
+            const clientAge = getClientAge(currentClient);
 
             // Branding Elements
             doc.setFontSize(16);
@@ -324,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             doc.text(`Name: ${currentClient.name}`, 40, 110);
             doc.text(`PAN: ${currentClient.pan}`, 350, 110);
             doc.text(`Status: ${currentClient.status}`, 40, 125);
-            doc.text(`Age/DOB: ${currentClient.age} (${currentClient.dob || 'N/A'})`, 350, 125);
+            doc.text(`Age/DOB: ${clientAge} Yrs (${currentClient.dob || 'N/A'})`, 350, 125);
 
             const f = (amt) => amt.toLocaleString('en-IN', {minimumFractionDigits: 2});
             const c = computedData;
@@ -409,10 +414,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * ========================================================================
-     * MATH UTILS
+     * MATH & AGE UTILS
      * ========================================================================
      */
     function sumAmounts(arr) { return arr.reduce((sum, item) => sum + item.amount, 0); }
+
+    function getClientAge(client) {
+        if (client && client.age !== undefined && client.age !== null && client.age !== '') {
+            return Number(client.age);
+        }
+        if (client && client.dob) {
+            const dob = new Date(client.dob);
+            if (!isNaN(dob.getTime())) {
+                const diffMs = Date.now() - dob.getTime();
+                const ageDt = new Date(diffMs);
+                return Math.abs(ageDt.getUTCFullYear() - 1970);
+            }
+        }
+        return 0;
+    }
 
     function determineOldSlab(age, rules) {
         if (age >= 80) return rules.slabs_super_senior;
