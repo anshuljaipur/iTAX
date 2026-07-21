@@ -96,8 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function generateReport(format) {
         const type = document.getElementById('reportType').value;
-        const clientId = document.getElementById('reportClient').value;
+        let clientId = document.getElementById('reportClient').value;
         const fy = document.getElementById('global-fy-selector').value; // from app.js state
+        
+        // Convert "ALL" to empty string for the database fetcher
+        if (clientId === "ALL") clientId = "";
         
         let reportData = [];
         let headers = [];
@@ -106,7 +109,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'tx_register') {
             title = `Transaction Register (${fy.replace('_', '-')})`;
             headers = ["Date", "Client", "PAN", "Voucher", "Head", "Category", "Amount (₹)"];
-            reportData = await getTransactionRegisterData(clientId, fy);
+            
+            // 1. Fetch raw transaction data from Firebase
+            const txs = await getTransactionRegisterData(clientId, fy);
+            
+            // 2. Map client data to transactions
+            const dataRows = [];
+            for (let tx of txs) {
+                const client = await window.DB.Clients.getClientById(tx.clientId);
+                dataRows.push([
+                    new Date(tx.date).toLocaleDateString('en-IN'),
+                    client ? client.name : 'Unknown',
+                    client ? client.pan : 'Unknown',
+                    tx.voucherNo,
+                    tx.incomeHead,
+                    tx.category,
+                    tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })
+                ]);
+            }
+            reportData = dataRows;
         }
 
         if (reportData.length === 0) {
@@ -119,22 +140,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (format === 'excel') exportToExcel(title, headers, reportData);
     }
 
-    
-        // Map client data to transactions
-        const dataRows = [];
-        for (let tx of txs) {
-            const client = await window.DB.Clients.getClientById(tx.clientId);
-            dataRows.push([
-                new Date(tx.date).toLocaleDateString('en-IN'),
-                client ? client.name : 'Unknown',
-                client ? client.pan : 'Unknown',
-                tx.voucherNo,
-                tx.incomeHead,
-                tx.category,
-                tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })
-            ]);
+    async function getTransactionRegisterData(clientId, fy) {
+        try {
+            // If a specific client is selected in the dropdown
+            if (clientId && clientId !== "") {
+                return await window.DB.Transactions.getTransactionsByClientAndFY(clientId, fy);
+            } 
+            // If "-- All Clients --" is selected
+            else {
+                return await window.DB.Transactions.getAllTransactionsByFY(fy);
+            }
+        } catch (error) {
+            console.error("Error fetching report data:", error);
+            window.showToast("Failed to fetch report data from cloud.", "danger");
+            return [];
         }
-        return dataRows;
     }
 
     /**
@@ -211,20 +231,3 @@ document.addEventListener('DOMContentLoaded', () => {
         window.showToast("Excel Downloaded Successfully", "success");
     }
 });
-
-async function getTransactionRegisterData(clientId, fy) {
-        try {
-            // If a specific client is selected in the dropdown
-            if (clientId && clientId !== "") {
-                return await window.DB.Transactions.getTransactionsByClientAndFY(clientId, fy);
-            } 
-            // If "-- All Clients --" is selected
-            else {
-                return await window.DB.Transactions.getAllTransactionsByFY(fy);
-            }
-        } catch (error) {
-            console.error("Error fetching report data:", error);
-            window.showToast("Failed to fetch report data from cloud.", "danger");
-            return [];
-        }
-    }
