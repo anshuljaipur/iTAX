@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Map client data to transactions
         const dataRows = [];
         for (let tx of txs) {
-            const client = await window.DB.Clients.getClientById(tx.clientId);
+            const client = async window.DB.Clients.getClientById(tx.clientId);
             dataRows.push([
                 new Date(tx.date).toLocaleDateString('en-IN'),
                 client ? client.name : 'Unknown',
