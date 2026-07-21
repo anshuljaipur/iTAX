@@ -119,26 +119,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (format === 'excel') exportToExcel(title, headers, reportData);
     }
 
-    async function getTransactionRegisterData(clientId, fy) {
-        try {
-            // If a specific client is selected in the dropdown
-            if (clientId && clientId !== "") {
-                return await window.DB.Transactions.getTransactionsByClientAndFY(clientId, fy);
-            } 
-            // If "-- All Clients --" is selected
-            else {
-                return await window.DB.Transactions.getAllTransactionsByFY(fy);
-            }
-        } catch (error) {
-            console.error("Error fetching report data:", error);
-            window.showToast("Failed to fetch report data from cloud.", "danger");
-            return [];
-        }
-    }
+    
         // Map client data to transactions
         const dataRows = [];
         for (let tx of txs) {
-            const client = async window.DB.Clients.getClientById(tx.clientId);
+            const client = await window.DB.Clients.getClientById(tx.clientId);
             dataRows.push([
                 new Date(tx.date).toLocaleDateString('en-IN'),
                 client ? client.name : 'Unknown',
@@ -226,3 +211,20 @@ document.addEventListener('DOMContentLoaded', () => {
         window.showToast("Excel Downloaded Successfully", "success");
     }
 });
+
+async function getTransactionRegisterData(clientId, fy) {
+        try {
+            // If a specific client is selected in the dropdown
+            if (clientId && clientId !== "") {
+                return await window.DB.Transactions.getTransactionsByClientAndFY(clientId, fy);
+            } 
+            // If "-- All Clients --" is selected
+            else {
+                return await window.DB.Transactions.getAllTransactionsByFY(fy);
+            }
+        } catch (error) {
+            console.error("Error fetching report data:", error);
+            window.showToast("Failed to fetch report data from cloud.", "danger");
+            return [];
+        }
+    }
