@@ -176,3 +176,60 @@ body.dark-mode .compact-icon-btn {
     border-color: #495057;
     color: #f8f9fa;
 }
+
+/* =========================================
+   MOBILE OPTIMIZATION (Phones & Tablets)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    /* 1. Scale down overall typography */
+    body {
+        font-size: 0.85rem !important; /* Reduces base text size */
+    }
+
+    h1, .h1 { font-size: 1.5rem !important; }
+    h2, .h2 { font-size: 1.25rem !important; }
+    h3, .h3 { font-size: 1.1rem !important; }
+    h4, .h4, h5, .h5, h6, .h6 { font-size: 1rem !important; }
+
+    /* 2. Compress spacing inside cards and panels */
+    .card, .glass-panel, .p-4 {
+        padding: 1rem !important; /* Overrides large desktop padding */
+        margin-bottom: 1rem !important;
+    }
+
+    /* 3. Optimize Tables for Mobile */
+    .table {
+        font-size: 0.8rem; /* Smaller text inside data tables */
+    }
+    
+    .table th, .table td {
+        padding: 0.4rem !important; /* Tighter cells so more columns fit */
+        white-space: nowrap; /* Prevents text from awkwardly wrapping and making rows huge */
+    }
+
+    /* 4. Fix Top Header Layout (Search Bar & FY Selector) */
+    /* Overrides the 1fr 2fr grid so items stack neatly on small screens */
+    header .container-fluid.d-grid {
+        display: flex !important;
+        flex-direction: column;
+        gap: 10px !important;
+    }
+
+    /* Make the FY selector and Search bar take full width on mobile */
+    #global-fy-selector {
+        flex-grow: 1;
+        width: 100% !important;
+    }
+
+    /* Ensure the wrapper rows take full width */
+    header .d-flex {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* 5. Adjust firm dashboard large numbers */
+    .fw-bold.fs-1 {
+        font-size: 1.75rem !important; /* Stops the big numbers from overflowing */
+    }
+}
