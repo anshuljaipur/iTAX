@@ -40,7 +40,6 @@ body{
   font-family:'Inter',sans-serif;
   color:var(--ink);
   min-height:100vh;
-  /* Prevent overscroll bounce on mobile */
   overscroll-behavior-y: none;
 }
 .mono{font-family:'IBM Plex Mono',monospace;}
@@ -65,7 +64,6 @@ input,select{font-family:inherit;}
   background:
     radial-gradient(circle at 85% -10%, rgba(201,162,75,0.14), transparent 45%),
     linear-gradient(180deg, var(--cover-navy) 0%, var(--cover-navy-deep) 100%);
-  /* Mobile safe area padding for notch devices */
   padding: max(env(safe-area-inset-top, 38px), 38px) 20px 26px;
   border-bottom:1px solid rgba(201,162,75,0.35);
 }
@@ -147,9 +145,7 @@ input,select{font-family:inherit;}
 .field-group label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);}
 select.filter, input.filter{
   border:1px solid var(--paper-line);background:var(--paper-raised);padding:9px 10px;border-radius:var(--radius);
-  color:var(--ink);min-width:130px;
-  /* 16px font-size is critical on mobile to stop iOS auto-zoom on form elements */
-  font-size: 16px; 
+  color:var(--ink);min-width:130px; font-size: 16px; 
 }
 input.filter{min-width:170px;}
 .toolbar .spacer{flex:1;}
@@ -165,7 +161,7 @@ input.filter{min-width:170px;}
 /* ===== TABLE ===== */
 .table-wrap{
   overflow-x:auto; border:1px solid var(--paper-line); background:var(--paper-raised);
-  -webkit-overflow-scrolling: touch; /* smooth mobile scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 table{border-collapse:collapse;width:100%;min-width:1080px;}
 thead th{
@@ -185,7 +181,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 .bank-cell .note{display:block;font-size:0.75rem;color:var(--ink-soft);margin-top:2px;}
 .gain-pos{color:var(--stamp-green);}
 .gain-neg{color:var(--stamp-rust);}
-.row-actions{display:flex;gap:8px;}
+.row-actions{display:flex;gap:8px; align-items:center;}
 .icon-btn{
   border:1px solid var(--paper-line);background:var(--paper);width:32px;height:32px;border-radius:4px;
   display:inline-flex;align-items:center;justify-content:center;font-size:0.85rem;color:var(--ink-soft);
@@ -201,6 +197,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 .badge.soon{color:var(--stamp-rust);}
 .badge.matured{color:var(--brass-deep);}
 .badge.broken{color:#8A5A2B;border-style:dashed;}
+.badge.settled{color:#5A7A3C;border-style:dashed;}
 
 .selection-bar{display:flex;align-items:center;gap:12px;font-size:0.78rem;color:var(--brass-deep);}
 .selection-bar a{color:var(--ink);text-decoration:underline;cursor:pointer;}
@@ -231,7 +228,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 /* ===== MODAL ===== */
 .modal-backdrop{
   position:fixed;inset:0;background:rgba(15,23,41,0.65);display:flex;align-items:flex-end;justify-content:center;
-  z-index:9999; padding:0; /* changed padding for mobile bottom-sheet feel */
+  z-index:9999; padding:0;
 }
 .modal-backdrop[hidden]{display:none !important;}
 .modal{
@@ -251,7 +248,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 .form-field label{display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:6px;}
 .form-field input, .form-field select{
   width:100%;padding:11px 12px;border:1px solid var(--paper-line);border-radius:var(--radius);background:var(--paper);
-  color:var(--ink); font-size:16px; /* Prevents iOS Zoom */
+  color:var(--ink); font-size:16px; 
 }
 .form-hint{font-size:0.7rem;color:var(--ink-soft);margin-top:6px;}
 .modal-footer{padding:18px 24px;border-top:1px solid var(--paper-line);display:flex;justify-content:flex-end;gap:12px; position:sticky; bottom:0; background:var(--paper-raised); z-index:10;}
@@ -332,7 +329,8 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
             <option value="all">All</option>
             <option value="active">Active</option>
             <option value="soon">Maturing soon (30d)</option>
-            <option value="matured">Matured</option>
+            <option value="matured">Matured (Action needed)</option>
+            <option value="settled">Settled / Renewed</option>
             <option value="broken">Broken</option>
           </select>
         </div>
@@ -355,8 +353,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 
       <div class="legend">
         <b>EIR</b> (Effective Interest Rate) — the annual yield of the deposit once its compounding frequency is applied: (1 + r/n)ⁿ − 1. Not applicable when interest is paid out rather than reinvested.
-        <b>ARR</b> (Annualised Rate of Return) — the return actually accrued so far, at maturity, or on premature break, annualised from the real elapsed days: (Value ÷ Principal)^(365/days) − 1.
-        Tick rows to export just those; leave none ticked to export whatever the filters above are currently showing. Click any column heading to sort.
+        <b>ARR</b> (Annualised Rate of Return) — the actual return achieved, calculating real elapsed days versus final net amount received. Freezes permanently once a deposit is marked as settled or broken.
       </div>
     </section>
 
@@ -408,6 +405,14 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
             <label>FD number / note (optional)</label>
             <input type="text" id="fdNote" placeholder="e.g. FDR-88213">
           </div>
+          <div class="form-field full">
+            <label>Maturity Instruction (What happens at the end?)</label>
+            <select id="fdInstruction" required>
+              <option value="auto_renew">Auto Renewal (Principal + Interest)</option>
+              <option value="payout_reinvest">Reinvest Principal, Payout Interest</option>
+              <option value="close">Close on Maturity</option>
+            </select>
+          </div>
           <div class="form-field">
             <label>Principal (₹)</label>
             <input type="number" id="fdPrincipal" min="0" step="0.01" required>
@@ -453,7 +458,6 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
               <input type="number" id="fdTenureM" min="0" max="11" step="1" placeholder="Months">
               <input type="number" id="fdTenureD" min="0" max="30" step="1" placeholder="Days">
             </div>
-            <div class="form-hint">Enter years / months / days and the maturity date fills in automatically — or set the maturity date directly and the tenure updates to match.</div>
           </div>
           <div class="form-field">
             <label>Maturity date</label>
@@ -462,7 +466,6 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
           <div class="form-field full">
             <label>Bank-quoted maturity value (₹, optional)</label>
             <input type="number" id="fdOverride" min="0" step="0.01" placeholder="Leave blank to auto-calculate">
-            <div class="form-hint">If your bank's statement shows an exact maturity value, enter it here — the ledger will use it instead of the formula above, and interpolate the current value in a straight line toward it.</div>
           </div>
           <div class="form-field full" style="border-top:1px dashed var(--paper-line);padding-top:14px;">
             <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:0.85rem;color:var(--ink);">
@@ -477,8 +480,8 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
                 <input type="date" id="fdBreakDate">
               </div>
               <div class="form-field">
-                <label>Amount received (₹)</label>
-                <input type="number" id="fdAmountReceived" min="0" step="0.01" placeholder="After any penalty">
+                <label>Total Amount received (₹)</label>
+                <input type="number" id="fdAmountReceived" min="0" step="0.01" placeholder="Net after any penalty/TDS">
               </div>
             </div>
             <div class="form-hint" id="fdBreakPreview" style="margin-top:8px;color:var(--brass-deep);font-weight:600;"></div>
@@ -488,6 +491,57 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
       <div class="modal-footer">
         <button type="button" class="btn-outline" id="fdCancel">Cancel</button>
         <button type="submit" class="btn btn-brass" id="btnSaveDeposit">Save Deposit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- SETTLE MATURITY MODAL -->
+<div class="modal-backdrop" id="settleModal" style="display:none;">
+  <div class="modal" style="max-width:450px;">
+    <div class="modal-header">
+      <h3>Settle Matured Deposit</h3>
+      <button class="modal-close" id="settleModalClose">&times;</button>
+    </div>
+    <form id="settleForm">
+      <div class="modal-body">
+        <input type="hidden" id="settleFdId">
+        <div style="margin-bottom:16px; font-size:0.85rem; color:var(--ink-soft); line-height:1.5;">
+          This deposit was set to: <b id="settleInstructionText" style="color:var(--ink);"></b>.<br>
+          Fill in the final amounts below to lock in the true ARR. <span id="settleRenewHint" style="color:var(--brass-deep); font-weight:600;">If renewed, a new deposit will automatically be created.</span>
+        </div>
+        
+        <div class="form-grid">
+          <!-- Shown for ALL settled types -->
+          <div class="form-field full">
+            <label>TDS Deducted (₹)</label>
+            <input type="number" id="settleTds" min="0" step="0.01" value="0" required>
+          </div>
+          
+          <!-- Shown if Close -->
+          <div class="form-field full" id="settleCloseBlock" style="display:none;">
+            <label>Final Net Amount Received to Bank (₹)</label>
+            <input type="number" id="settleNetAmount" min="0" step="0.01">
+            <div class="form-hint">The actual amount credited after TDS.</div>
+          </div>
+
+          <!-- Shown if Auto Renew or Payout/Reinvest -->
+          <div class="form-field full" id="settleRenewBlock" style="display:none;">
+            <label>New Renewal Rate (%)</label>
+            <input type="number" id="settleRenewalRate" min="0" step="0.01">
+          </div>
+
+          <!-- Shown ONLY if Payout / Reinvest -->
+          <div class="form-field full" id="settlePayoutBlock" style="display:none;">
+            <label>Interest Payout Received (₹)</label>
+            <input type="number" id="settleInterestPayout" min="0" step="0.01">
+            <div class="form-hint">The exact amount of interest credited to your account.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" id="settleCancel">Cancel</button>
+        <button type="submit" class="btn btn-brass">Settle & Re-calculate</button>
       </div>
     </form>
   </div>
@@ -581,7 +635,6 @@ auth.onAuthStateChanged(user => {
     currentUser = null;
     document.getElementById('loginOverlay').style.display = 'flex';
     document.getElementById('userEmailDisplay').textContent = '';
-    // Clear local data on logout
     state.people = [];
     state.deposits = [];
     state.selected.clear();
@@ -594,13 +647,10 @@ async function loadData() {
   if (!currentUser) return;
   try {
     const userRef = db.collection('users').doc(currentUser.uid);
-    
     const peopleSnap = await userRef.collection('people').get();
     state.people = peopleSnap.docs.map(doc => doc.data());
-
     const fdSnap = await userRef.collection('deposits').get();
     state.deposits = fdSnap.docs.map(doc => doc.data());
-
     renderAll();
   } catch (error) {
     console.error("Error loading data from Firebase:", error);
@@ -668,8 +718,18 @@ function isCumulative(fd){ return fd.interestType !== 'payout'; }
 function interestLabel(fd){
   return (isCumulative(fd) ? 'Cumulative' : 'Payout') + ' · ' + freqLabel(fd.compounding);
 }
-function effMaturity(fd){ return fd.broken ? fd.breakDate : fd.maturityDate; }
-function effOverrideVal(fd){ return fd.broken ? fd.amountReceived : fd.override; }
+// Broken or Settled locks in the maturity timeline
+function effMaturity(fd){ 
+  if(fd.broken) return fd.breakDate;
+  if(fd.settled) return fd.maturityDate;
+  return fd.maturityDate; 
+}
+// Returns manual override or final settled amount
+function effOverrideVal(fd){ 
+  if(fd.broken) return fd.amountReceived;
+  if(fd.settled) return fd.settlementAmount;
+  return fd.override; 
+}
 
 function compoundN(freq){
   switch(freq){
@@ -707,10 +767,15 @@ function maturityValue(fd){
 }
 
 function currentValue(fd, asOf){
+  // If settled, current value is forever locked at settlement amount
+  if(fd.settled) return fd.settlementAmount;
+  if(fd.broken) return fd.amountReceived;
+
   const start = parseDate(fd.startDate);
   const maturity = parseDate(effMaturity(fd));
   const cap = asOf < maturity ? asOf : maturity;
   if(cap <= start) return fd.principal;
+  
   const ov = effOverrideVal(fd);
   if(ov && ov>0){
     const totalDays = daysBetween(start, maturity);
@@ -733,28 +798,39 @@ function currentValue(fd, asOf){
 function arrValue(fd, asOf){
   const start = parseDate(fd.startDate);
   const maturity = parseDate(effMaturity(fd));
-  const cap = asOf < maturity ? asOf : maturity;
+  const cap = (asOf < maturity && !fd.broken && !fd.settled) ? asOf : maturity;
   const days = daysBetween(start, cap);
   
-  // FIX: If the FD starts today (0 days elapsed) or in the future, 
-  // fall back to showing the expected effective rate instead of 0.00%
-  if(days <= 0) return effectiveRate(fd);
+  if(days <= 0) return effectiveRate(fd); // Prevents divide by zero on day 1
   
-  const CV = currentValue(fd, asOf);
+  const CV = currentValue(fd, cap); // Measure ARR based on actual final/current cap
   const ratio = CV/fd.principal;
-  if(ratio <= 0) return 0;
+  if(ratio<=0) return 0;
   return Math.pow(ratio, 365/days) - 1;
 }
 
 function statusOf(fd, asOf){
   if(fd.broken) return 'broken';
+  if(fd.settled) return 'settled';
   const maturity = parseDate(fd.maturityDate);
   const d = daysBetween(asOf, maturity);
   if(d<0) return 'matured';
   if(d<=30) return 'soon';
   return 'active';
 }
-function statusLabel(s){ return s==='matured'?'Matured':s==='soon'?'Maturing soon':s==='broken'?'Broken':'Active'; }
+function statusLabel(s){ 
+  if(s==='matured') return 'Matured';
+  if(s==='soon') return 'Maturing soon';
+  if(s==='broken') return 'Broken';
+  if(s==='settled') return 'Settled';
+  return 'Active';
+}
+
+function getInstructionLabel(val){
+  if(val === 'auto_renew') return 'Auto Renewal';
+  if(val === 'payout_reinvest') return 'Reinvest Principal & Payout Interest';
+  return 'Close on Maturity';
+}
 
 function personById(id){ return state.people.find(p=>p.id===id); }
 function personColor(idx){ return PALETTE[idx % PALETTE.length]; }
@@ -920,7 +996,6 @@ function renderPersonGrid(){
           for (let fdId of fdIdsToDelete) {
              await userRef.collection('deposits').doc(fdId).delete();
           }
-          
           state.deposits = state.deposits.filter(d=>d.personId!==id);
           state.people = state.people.filter(pp=>pp.id!==id);
           if(state.activePerson===id) state.activePerson='all';
@@ -996,14 +1071,25 @@ function renderLedgerTable(){
     list.forEach(r=>{
       const idx = state.people.findIndex(p=>p.id===r.fd.personId);
       const gainClass = r.cv >= r.fd.principal ? 'gain-pos' : 'gain-neg';
-      const maturityCell = r.fd.broken
-        ? `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(r.maturity)}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`
-        : fmtDate(r.maturity);
+      
+      let maturityCell = fmtDate(r.maturity);
+      if(r.fd.broken) maturityCell = `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
+      if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
+
+      let actions = `<button class="icon-btn" data-editfd="${r.fd.id}" title="Edit">✎</button>
+                     <button class="icon-btn" data-delfd="${r.fd.id}" title="Delete">✕</button>`;
+      
+      // Inject "Settle" button if it is matured but not yet processed
+      if(r.status === 'matured' && !r.fd.settled) {
+        actions = `<button class="btn-outline btn-small" style="color:var(--stamp-rust); border-color:var(--stamp-rust); margin-right:8px;" data-settlefd="${r.fd.id}">Settle</button>` + actions;
+      }
+
       body += `<tr>
         <td class="no-print"><input type="checkbox" class="rowcheck" data-id="${r.fd.id}" ${state.selected.has(r.fd.id)?'checked':''}></td>
         <td class="bank-cell">
           <span class="bank-name">${escapeHtml(r.fd.bank)}</span>
           ${r.fd.note ? `<span class="note">${escapeHtml(r.fd.note)}</span>` : ''}
+          ${r.fd.maturityInstruction ? `<span class="note" style="color:var(--brass-deep)">${getInstructionLabel(r.fd.maturityInstruction)}</span>` : ''}
         </td>
         <td><span class="holder-chip"><span class="dot" style="background:${personColor(idx)}"></span>${escapeHtml(r.person?r.person.name:'—')}</span></td>
         <td class="num">${fmtCurrency(r.fd.principal)}</td>
@@ -1016,10 +1102,7 @@ function renderLedgerTable(){
         <td class="mono">${fmtDate(r.start)}</td>
         <td class="mono">${maturityCell}</td>
         <td><span class="badge ${r.status}">${statusLabel(r.status)}</span></td>
-        <td class="no-print"><div class="row-actions">
-          <button class="icon-btn" data-editfd="${r.fd.id}" title="Edit">✎</button>
-          <button class="icon-btn" data-delfd="${r.fd.id}" title="Delete">✕</button>
-        </div></td>
+        <td class="no-print"><div class="row-actions">${actions}</div></td>
       </tr>`;
     });
   }
@@ -1035,9 +1118,8 @@ function renderLedgerTable(){
       renderHero();
     });
   });
-  holder.querySelectorAll('[data-editfd]').forEach(el=>{
-    el.addEventListener('click', ()=> openFdModal(el.getAttribute('data-editfd')));
-  });
+  holder.querySelectorAll('[data-editfd]').forEach(el=>{ el.addEventListener('click', ()=> openFdModal(el.getAttribute('data-editfd'))); });
+  holder.querySelectorAll('[data-settlefd]').forEach(el=>{ el.addEventListener('click', ()=> openSettleModal(el.getAttribute('data-settlefd'))); });
   
   holder.querySelectorAll('[data-delfd]').forEach(el=>{
     el.addEventListener('click', async ()=>{
@@ -1114,9 +1196,10 @@ function renderStatement(){
     let cols = `<tr><th>Bank / Note</th>${showHolder?'<th>Holder</th>':''}<th class="num">Principal</th><th class="num">Rate</th><th>Interest</th><th class="num">EIR</th><th class="num">Current Value</th><th class="num">Maturity Value</th><th class="num">ARR</th><th>Start</th><th>Maturity / Break</th><th>Status</th></tr>`;
     let body='';
     rows.forEach(r=>{
-      const maturityCell = r.fd.broken
-        ? `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(r.maturity)}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`
-        : fmtDate(r.maturity);
+      let maturityCell = fmtDate(r.maturity);
+      if(r.fd.broken) maturityCell = `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
+      if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
+      
       body += `<tr>
         <td class="bank-cell"><span class="bank-name">${escapeHtml(r.fd.bank)}</span>${r.fd.note?`<span class="note">${escapeHtml(r.fd.note)}</span>`:''}</td>
         ${showHolder?`<td>${escapeHtml(r.person?r.person.name:'—')}</td>`:''}
@@ -1270,6 +1353,7 @@ function openFdModal(fdId){
     document.getElementById('fdHolder').value = fd.personId;
     document.getElementById('fdBank').value = fd.bank;
     document.getElementById('fdNote').value = fd.note||'';
+    document.getElementById('fdInstruction').value = fd.maturityInstruction || 'auto_renew';
     document.getElementById('fdPrincipal').value = fd.principal;
     document.getElementById('fdRate').value = fd.rate;
     document.getElementById('fdInterestType').value = fd.interestType==='payout' ? 'payout' : 'cumulative';
@@ -1296,6 +1380,7 @@ function openFdModal(fdId){
     document.getElementById('fdHolder').value = state.activePerson!=='all' ? state.activePerson : (state.people[0]?state.people[0].id:'');
     document.getElementById('fdBank').value='';
     document.getElementById('fdNote').value='';
+    document.getElementById('fdInstruction').value = 'auto_renew';
     document.getElementById('fdPrincipal').value='';
     document.getElementById('fdRate').value='';
     document.getElementById('fdInterestType').value='cumulative';
@@ -1317,6 +1402,56 @@ function openFdModal(fdId){
 }
 function closeFdModal(){ document.getElementById('fdModal').style.display='none'; editingFdId=null; }
 
+function openSettleModal(fdId){
+  const fd = state.deposits.find(d=>d.id===fdId);
+  if(!fd) return;
+  document.getElementById('settleFdId').value = fd.id;
+  
+  const instruction = fd.maturityInstruction || 'auto_renew';
+  document.getElementById('settleInstructionText').textContent = getInstructionLabel(instruction);
+  
+  // Reset fields
+  document.getElementById('settleTds').value = '0';
+  document.getElementById('settleNetAmount').value = '';
+  document.getElementById('settleRenewalRate').value = '';
+  document.getElementById('settleInterestPayout').value = '';
+
+  // Show logic
+  const blockClose = document.getElementById('settleCloseBlock');
+  const blockRenew = document.getElementById('settleRenewBlock');
+  const blockPayout = document.getElementById('settlePayoutBlock');
+  const hint = document.getElementById('settleRenewHint');
+
+  if(instruction === 'close'){
+    blockClose.style.display = '';
+    blockRenew.style.display = 'none';
+    blockPayout.style.display = 'none';
+    hint.style.display = 'none';
+    document.getElementById('settleNetAmount').required = true;
+    document.getElementById('settleRenewalRate').required = false;
+    document.getElementById('settleInterestPayout').required = false;
+  } else if (instruction === 'renew_auto'){
+    blockClose.style.display = 'none';
+    blockRenew.style.display = '';
+    blockPayout.style.display = 'none';
+    hint.style.display = '';
+    document.getElementById('settleNetAmount').required = false;
+    document.getElementById('settleRenewalRate').required = true;
+    document.getElementById('settleInterestPayout').required = false;
+  } else if (instruction === 'payout_reinvest'){
+    blockClose.style.display = 'none';
+    blockRenew.style.display = '';
+    blockPayout.style.display = '';
+    hint.style.display = '';
+    document.getElementById('settleNetAmount').required = false;
+    document.getElementById('settleRenewalRate').required = true;
+    document.getElementById('settleInterestPayout').required = true;
+  }
+
+  document.getElementById('settleModal').style.display='flex';
+}
+function closeSettleModal(){ document.getElementById('settleModal').style.display='none'; }
+
 /* ---------------- EXPORT / IMPORT ---------------- */
 function downloadBlob(content, filename, type){
   const blob = new Blob([content], {type});
@@ -1332,7 +1467,6 @@ function exportJSON(){
   downloadBlob(data, 'family-fd-data.json', 'application/json');
 }
 
-// Read JSON file and push data to Firestore
 async function importJSONToFirestore(file) {
   if(!currentUser) return;
   const reader = new FileReader();
@@ -1340,41 +1474,26 @@ async function importJSONToFirestore(file) {
     try {
       const data = JSON.parse(e.target.result);
       if(!Array.isArray(data.people) || !Array.isArray(data.deposits)) throw new Error('Invalid file structure');
-
       const replace = confirm('Click OK to REPLACE all current cloud data with this file.\nClick Cancel to MERGE it with your existing data instead.');
       const userRef = db.collection('users').doc(currentUser.uid);
-
-      // Simple loading alert (since multiple Firestore writes take a moment)
       const btn = document.getElementById('btnImport');
       const originalText = btn.textContent;
       btn.textContent = "Importing...";
       btn.disabled = true;
 
       if (replace) {
-        // Clear existing people from Firestore
         const pSnap = await userRef.collection('people').get();
         for (let doc of pSnap.docs) await doc.ref.delete();
-        // Clear existing deposits from Firestore
         const dSnap = await userRef.collection('deposits').get();
         for (let doc of dSnap.docs) await doc.ref.delete();
       }
-
-      // Write people
-      for (let p of data.people) {
-        await userRef.collection('people').doc(p.id).set(p);
-      }
-      // Write deposits
-      for (let d of data.deposits) {
-        await userRef.collection('deposits').doc(d.id).set(d);
-      }
+      for (let p of data.people) await userRef.collection('people').doc(p.id).set(p);
+      for (let d of data.deposits) await userRef.collection('deposits').doc(d.id).set(d);
 
       btn.textContent = originalText;
       btn.disabled = false;
       alert('Import successful!');
-      
-      // Reload UI
       loadData();
-
     } catch(err) {
       alert('Could not import this file: ' + err.message);
       const btn = document.getElementById('btnImport');
@@ -1445,10 +1564,10 @@ function pdfRow(r, includeHolder){
 }
 
 function exportLedgerPDF(){
-  if(!window.jspdf){ alert('The PDF library did not load — check your internet connection and try again.'); return; }
+  if(!window.jspdf){ alert('The PDF library did not load.'); return; }
   const { jsPDF } = window.jspdf;
   const list = getExportRows();
-  if(list.length===0){ alert('Nothing to export with the current filters/selection.'); return; }
+  if(list.length===0){ alert('Nothing to export.'); return; }
   const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a4'});
   const agg = computeAggregates(list);
   const scopeName = state.selected.size>0
@@ -1472,7 +1591,7 @@ function exportLedgerPDF(){
 }
 
 function exportStatementPDF(){
-  if(!window.jspdf){ alert('The PDF library did not load — check your internet connection and try again.'); return; }
+  if(!window.jspdf){ alert('The PDF library did not load.'); return; }
   const { jsPDF } = window.jspdf;
   const all = getEnrichedDeposits();
   const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a4'});
@@ -1527,20 +1646,9 @@ function exportStatementPDF(){
 
 /* ---------------- EVENTS ---------------- */
 document.getElementById('btnExport').addEventListener('click', exportJSON);
-
-document.getElementById('btnImport').addEventListener('click', ()=>{
-  if(!currentUser) { alert("Please sign in first."); return; }
-  document.getElementById('importFile').click();
-});
-document.getElementById('importFile').addEventListener('change', (e)=>{
-  if(e.target.files[0]) importJSONToFirestore(e.target.files[0]);
-  e.target.value='';
-});
-
-document.getElementById('btnAddFd').addEventListener('click', ()=>{
-  if(state.people.length===0){ alert('Add a family member first.'); openPersonModal(); return; }
-  openFdModal(null);
-});
+document.getElementById('btnImport').addEventListener('click', ()=>{ if(!currentUser) return; document.getElementById('importFile').click(); });
+document.getElementById('importFile').addEventListener('change', (e)=>{ if(e.target.files[0]) importJSONToFirestore(e.target.files[0]); e.target.value=''; });
+document.getElementById('btnAddFd').addEventListener('click', ()=>{ if(state.people.length===0){ alert('Add a family member first.'); openPersonModal(); return; } openFdModal(null); });
 document.getElementById('btnExportCsv').addEventListener('click', exportLedgerCSV);
 document.getElementById('btnExportPdf').addEventListener('click', exportLedgerPDF);
 document.getElementById('btnStatementCsv').addEventListener('click', exportStatementCSV);
@@ -1549,45 +1657,36 @@ document.getElementById('btnStatementPrint').addEventListener('click', ()=> wind
 
 document.getElementById('fdInterestType').addEventListener('change', toggleInterestFields);
 document.getElementById('fdBroken').addEventListener('change', toggleBrokenBlock);
-['fdTenureY','fdTenureM','fdTenureD'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', syncMaturityFromTenure);
-});
+['fdTenureY','fdTenureM','fdTenureD'].forEach(id=>{ document.getElementById(id).addEventListener('input', syncMaturityFromTenure); });
 document.getElementById('fdMaturity').addEventListener('change', syncTenureFromDates);
 document.getElementById('fdStart').addEventListener('change', ()=>{
-  const y=parseInt(document.getElementById('fdTenureY').value)||0;
-  const m=parseInt(document.getElementById('fdTenureM').value)||0;
-  const d=parseInt(document.getElementById('fdTenureD').value)||0;
+  const y=parseInt(document.getElementById('fdTenureY').value)||0; const m=parseInt(document.getElementById('fdTenureM').value)||0; const d=parseInt(document.getElementById('fdTenureD').value)||0;
   if(y||m||d) syncMaturityFromTenure(); else syncTenureFromDates();
 });
-['fdPrincipal','fdStart','fdBreakDate','fdAmountReceived'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', updateBreakPreview);
-});
+['fdPrincipal','fdStart','fdBreakDate','fdAmountReceived'].forEach(id=>{ document.getElementById(id).addEventListener('input', updateBreakPreview); });
 
 document.getElementById('viewBtnLedger').addEventListener('click', ()=>{ state.view='ledger'; renderAll(); });
 document.getElementById('viewBtnStatement').addEventListener('click', ()=>{ state.view='statement'; renderAll(); });
-
 document.getElementById('filterStatus').addEventListener('change', (e)=>{ state.filterStatus=e.target.value; renderAll(); });
 document.getElementById('filterSearch').addEventListener('input', (e)=>{ state.search=e.target.value; renderHero(); renderLedgerTable(); });
-
 document.getElementById('statementPerson').addEventListener('change', (e)=>{ state.statementPerson=e.target.value; renderStatement(); });
-
 document.getElementById('fdModalClose').addEventListener('click', closeFdModal);
 document.getElementById('fdCancel').addEventListener('click', closeFdModal);
 document.getElementById('fdModal').addEventListener('click', (e)=>{ if(e.target.id==='fdModal') closeFdModal(); });
-
+document.getElementById('settleModalClose').addEventListener('click', closeSettleModal);
+document.getElementById('settleCancel').addEventListener('click', closeSettleModal);
+document.getElementById('settleModal').addEventListener('click', (e)=>{ if(e.target.id==='settleModal') closeSettleModal(); });
 document.getElementById('personModalClose').addEventListener('click', closePersonModal);
 document.getElementById('personCancel').addEventListener('click', closePersonModal);
 document.getElementById('personModal').addEventListener('click', (e)=>{ if(e.target.id==='personModal') closePersonModal(); });
 
-// Handle Save Person (Firebase tied to User UID)
+// Handle Save Person
 document.getElementById('personForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   if(!currentUser) return;
-  
   const name = document.getElementById('personName').value.trim();
   if(!name) return;
   const p = {id:uid('p'), name};
-  
   try {
     await db.collection('users').doc(currentUser.uid).collection('people').doc(p.id).set(p);
     state.people.push(p);
@@ -1599,42 +1698,33 @@ document.getElementById('personForm').addEventListener('submit', async (e)=>{
   }
 });
 
-// Handle Save Deposit (Firebase tied to User UID)
+// Handle Save Deposit 
 document.getElementById('fdForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   if(!currentUser) return;
 
   const start = document.getElementById('fdStart').value;
   const maturity = document.getElementById('fdMaturity').value;
-  if(parseDate(maturity) <= parseDate(start)){
-    alert('Maturity date must be after the start date.');
-    return;
-  }
+  if(parseDate(maturity) <= parseDate(start)){ alert('Maturity date must be after the start date.'); return; }
+  
   const interestType = document.getElementById('fdInterestType').value;
   const broken = document.getElementById('fdBroken').checked;
   let breakDate = null, amountReceived = null;
   if(broken){
     breakDate = document.getElementById('fdBreakDate').value;
     const amtStr = document.getElementById('fdAmountReceived').value;
-    if(!breakDate || !amtStr){
-      alert('Enter both the break date and the amount received for a broken deposit.');
-      return;
-    }
+    if(!breakDate || !amtStr){ alert('Enter break date and amount received.'); return; }
     amountReceived = parseFloat(amtStr);
-    if(parseDate(breakDate) <= parseDate(start)){
-      alert('Break date must be after the start date.');
-      return;
-    }
-    if(parseDate(breakDate) > parseDate(maturity)){
-      alert('Break date should be on or before the maturity date — if it already matured, leave "broken" unchecked.');
-      return;
-    }
+    if(parseDate(breakDate) <= parseDate(start)){ alert('Break date must be after start date.'); return; }
+    if(parseDate(breakDate) > parseDate(maturity)){ alert('Break date must be before maturity.'); return; }
   }
+
   const record = {
     id: editingFdId || uid('fd'),
     personId: document.getElementById('fdHolder').value,
     bank: document.getElementById('fdBank').value.trim(),
     note: document.getElementById('fdNote').value.trim(),
+    maturityInstruction: document.getElementById('fdInstruction').value,
     principal: parseFloat(document.getElementById('fdPrincipal').value),
     rate: parseFloat(document.getElementById('fdRate').value),
     interestType: interestType,
@@ -1644,7 +1734,10 @@ document.getElementById('fdForm').addEventListener('submit', async (e)=>{
     override: document.getElementById('fdOverride').value ? parseFloat(document.getElementById('fdOverride').value) : null,
     broken: broken,
     breakDate: breakDate,
-    amountReceived: amountReceived
+    amountReceived: amountReceived,
+    // ensure new saves clear any old settlement flags unless explicitly preserved
+    settled: false,
+    settlementAmount: null
   };
   
   try {
@@ -1659,6 +1752,90 @@ document.getElementById('fdForm').addEventListener('submit', async (e)=>{
     renderAll();
   } catch(err) {
     alert("Error saving deposit: " + err.message);
+  }
+});
+
+// Handle Settlement Submit
+document.getElementById('settleForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!currentUser) return;
+  
+  const fdId = document.getElementById('settleFdId').value;
+  const fdIndex = state.deposits.findIndex(d=>d.id===fdId);
+  const oldFd = state.deposits[fdIndex];
+  const instruction = oldFd.maturityInstruction || 'auto_renew';
+  const tds = parseFloat(document.getElementById('settleTds').value) || 0;
+  
+  let finalCalculatedAmount = maturityValue(oldFd) - tds;
+  let newFdPrincipal = 0;
+  let newFdRate = 0;
+
+  if (instruction === 'close') {
+    const net = parseFloat(document.getElementById('settleNetAmount').value);
+    finalCalculatedAmount = net;
+  } else if (instruction === 'renew_auto') {
+    newFdRate = parseFloat(document.getElementById('settleRenewalRate').value);
+    newFdPrincipal = finalCalculatedAmount; 
+  } else if (instruction === 'payout_reinvest') {
+    const interestPayout = parseFloat(document.getElementById('settleInterestPayout').value);
+    newFdRate = parseFloat(document.getElementById('settleRenewalRate').value);
+    finalCalculatedAmount = oldFd.principal + interestPayout; 
+    newFdPrincipal = oldFd.principal; 
+  }
+
+  // 1. Update Old FD to mark as settled
+  const updatedOldFd = {
+    ...oldFd,
+    settled: true,
+    settlementAmount: finalCalculatedAmount,
+    tdsDeducted: tds
+  };
+
+  // 2. Prepare new FD if renewed
+  let newFd = null;
+  if (instruction !== 'close') {
+    const startObj = parseDate(oldFd.startDate);
+    const matObj = parseDate(oldFd.maturityDate);
+    const { y, m, d } = diffYMD(startObj, matObj);
+    const nextMatObj = addYMD(matObj, y, m, d);
+
+    newFd = {
+      id: uid('fd'),
+      personId: oldFd.personId,
+      bank: oldFd.bank,
+      note: oldFd.note ? oldFd.note + ' (Renewed)' : 'Renewed FD',
+      maturityInstruction: instruction,
+      principal: newFdPrincipal,
+      rate: newFdRate,
+      interestType: oldFd.interestType,
+      compounding: oldFd.compounding,
+      startDate: oldFd.maturityDate, 
+      maturityDate: toDateInputValue(nextMatObj),
+      override: null,
+      broken: false,
+      breakDate: null,
+      amountReceived: null,
+      settled: false,
+      settlementAmount: null
+    };
+  }
+
+  try {
+    const userRef = db.collection('users').doc(currentUser.uid).collection('deposits');
+    // Save old update
+    await userRef.doc(updatedOldFd.id).update(updatedOldFd);
+    state.deposits[fdIndex] = updatedOldFd;
+
+    // Save new record
+    if (newFd) {
+      await userRef.doc(newFd.id).set(newFd);
+      state.deposits.push(newFd);
+    }
+
+    closeSettleModal();
+    renderAll();
+  } catch (err) {
+    alert("Error settling deposit: " + err.message);
   }
 });
 
