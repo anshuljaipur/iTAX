@@ -39,6 +39,18 @@ body{
 button{font-family:inherit;cursor:pointer;}
 input,select{font-family:inherit;}
 
+/* ===== LOGIN OVERLAY ===== */
+#loginOverlay {
+  position: fixed; inset: 0; background: var(--cover-navy-deep); z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--navy-text);
+}
+#loginOverlay .seal { width: 80px; height: 80px; margin-bottom: 24px; }
+#loginOverlay .seal span { font-size: 1.5rem; }
+#loginOverlay h1 { font-family: 'Fraunces', serif; margin: 0 0 10px; font-size: 2.2rem; }
+#loginOverlay p { color: var(--navy-text-soft); margin-bottom: 30px; font-size: 0.95rem; }
+.btn-large { padding: 14px 28px; font-size: 1rem; border-radius: 4px; }
+
 /* ===== COVER HERO ===== */
 .cover{
   background:
@@ -247,6 +259,14 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 </head>
 <body>
 
+<!-- Login Overlay -->
+<div id="loginOverlay">
+  <div class="seal"><span>FD</span></div>
+  <h1>Family FD Ledger</h1>
+  <p>Please sign in to view and manage your data.</p>
+  <button id="btnGoogleLogin" class="btn btn-brass btn-large">Sign in with Google</button>
+</div>
+
 <header class="cover">
   <div class="cover-inner">
     <div class="cover-top">
@@ -254,12 +274,13 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
         <div class="seal"><span>FD</span></div>
         <div>
           <h1>Family Fixed Deposit Ledger</h1>
-          <div class="subtitle">Principal, effective rate &amp; annualised return — tracked across every account holder</div>
+          <div class="subtitle">Logged in as: <b id="userEmailDisplay" style="color:var(--brass-bright);"></b></div>
         </div>
       </div>
       <div class="cover-actions no-print">
         <button class="btn btn-ghost-light" id="btnExport">Export JSON</button>
         <button class="btn btn-brass" id="btnAddFd">+ Add Deposit</button>
+        <button class="btn btn-danger" id="btnLogout">Sign Out</button>
       </div>
     </div>
 
@@ -337,7 +358,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
   </div>
 </main>
 
-<div class="foot">Data is saved securely in your Firebase Cloud Firestore database.</div>
+<div class="foot">Data is saved securely and privately to your Google Account via Firebase Firestore.</div>
 
 <!-- FD Modal -->
 <div class="modal-backdrop" id="fdModal" style="display:none;">
@@ -472,28 +493,30 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-<!-- Firebase SDK -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
 <script>
 (function(){
 "use strict";
 
 /* ---------------- FIREBASE CONFIGURATION ---------------- */
-// Replace these values with the ones from your Firebase Console
 const firebaseConfig = {
   apiKey: "AIzaSyBwZx2OnjqTcqvzqM83Ujrq_FLo6rpXsvQ",
-    authDomain: "family-fds.firebaseapp.com",
-    projectId: "family-fds",
-    storageBucket: "family-fds.firebasestorage.app",
-    messagingSenderId: "298414474623",
-    appId: "1:298414474623:web:34d848f2c5467c5ddc464a"
+  authDomain: "family-fds.firebaseapp.com",
+  projectId: "family-fds",
+  storageBucket: "family-fds.firebasestorage.app",
+  messagingSenderId: "298414474623",
+  appId: "1:298414474623:web:34d848f2c5467c5ddc464a"
 };
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 /* ---------------- STATE ---------------- */
 const PALETTE = ['#A9803D','#2F6B4A','#3B5BA5','#9A3B28','#6B4A9A','#4A8B8B','#B0653F','#5A7A3C'];
@@ -512,20 +535,52 @@ let state = {
 };
 
 let editingFdId = null;
+let currentUser = null;
+
+/* ---------------- AUTHENTICATION LOGIC ---------------- */
+document.getElementById('btnGoogleLogin').addEventListener('click', () => {
+  auth.signInWithPopup(googleProvider).catch(err => alert("Login Error: " + err.message));
+});
+
+document.getElementById('btnLogout').addEventListener('click', () => {
+  auth.signOut();
+});
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('userEmailDisplay').textContent = user.email;
+    loadData();
+  } else {
+    currentUser = null;
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('userEmailDisplay').textContent = '';
+    // Clear local data on logout
+    state.people = [];
+    state.deposits = [];
+    state.selected.clear();
+    renderAll();
+  }
+});
 
 /* ---------------- INITIAL LOAD FROM FIRESTORE ---------------- */
 async function loadData() {
+  if (!currentUser) return;
   try {
-    const peopleSnap = await db.collection('people').get();
+    // Fetch from users/{userID}/people and users/{userID}/deposits
+    const userRef = db.collection('users').doc(currentUser.uid);
+    
+    const peopleSnap = await userRef.collection('people').get();
     state.people = peopleSnap.docs.map(doc => doc.data());
 
-    const fdSnap = await db.collection('deposits').get();
+    const fdSnap = await userRef.collection('deposits').get();
     state.deposits = fdSnap.docs.map(doc => doc.data());
 
     renderAll();
   } catch (error) {
     console.error("Error loading data from Firebase:", error);
-    alert("Could not load data. Please check if your Firebase Config is correct and Firestore Test Mode is enabled.");
+    alert("Could not load data. Ensure your Firestore rules allow access.");
   }
 }
 
@@ -826,15 +881,17 @@ function renderPersonGrid(){
   grid.querySelectorAll('[data-delperson]').forEach(el=>{
     el.addEventListener('click', async (e)=>{
       e.stopPropagation();
+      if(!currentUser) return;
       const id = el.getAttribute('data-delperson');
       const p = personById(id);
       if(confirm(`Remove ${p.name} and all ${state.deposits.filter(d=>d.personId===id).length} of their deposits?`)){
         try {
+          const userRef = db.collection('users').doc(currentUser.uid);
           // Delete from Firestore
-          await db.collection('people').doc(id).delete();
+          await userRef.collection('people').doc(id).delete();
           const fdIdsToDelete = state.deposits.filter(d => d.personId === id).map(d => d.id);
           for (let fdId of fdIdsToDelete) {
-             await db.collection('deposits').doc(fdId).delete();
+             await userRef.collection('deposits').doc(fdId).delete();
           }
           
           // Update local state
@@ -852,13 +909,14 @@ function renderPersonGrid(){
   grid.querySelectorAll('[data-editperson]').forEach(el=>{
     el.addEventListener('click', async (e)=>{
       e.stopPropagation();
+      if(!currentUser) return;
       const id = el.getAttribute('data-editperson');
       const p = personById(id);
       const newName = prompt('Rename family member:', p.name);
       if(newName && newName.trim()){
         try {
           p.name = newName.trim();
-          await db.collection('people').doc(id).update({ name: p.name });
+          await db.collection('users').doc(currentUser.uid).collection('people').doc(id).update({ name: p.name });
           renderAll();
         } catch (err) {
           alert("Error renaming: " + err.message);
@@ -957,10 +1015,11 @@ function renderLedgerTable(){
   
   holder.querySelectorAll('[data-delfd]').forEach(el=>{
     el.addEventListener('click', async ()=>{
+      if(!currentUser) return;
       const id = el.getAttribute('data-delfd');
       if(confirm('Delete this deposit record?')){
         try {
-          await db.collection('deposits').doc(id).delete();
+          await db.collection('users').doc(currentUser.uid).collection('deposits').doc(id).delete();
           state.deposits = state.deposits.filter(d=>d.id!==id);
           state.selected.delete(id);
           renderAll();
@@ -1432,15 +1491,17 @@ document.getElementById('personModalClose').addEventListener('click', closePerso
 document.getElementById('personCancel').addEventListener('click', closePersonModal);
 document.getElementById('personModal').addEventListener('click', (e)=>{ if(e.target.id==='personModal') closePersonModal(); });
 
-// Handle Save Person (Firebase)
+// Handle Save Person (Firebase tied to User UID)
 document.getElementById('personForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
+  if(!currentUser) return;
+  
   const name = document.getElementById('personName').value.trim();
   if(!name) return;
   const p = {id:uid('p'), name};
   
   try {
-    await db.collection('people').doc(p.id).set(p);
+    await db.collection('users').doc(currentUser.uid).collection('people').doc(p.id).set(p);
     state.people.push(p);
     state.activePerson = p.id;
     closePersonModal();
@@ -1450,9 +1511,11 @@ document.getElementById('personForm').addEventListener('submit', async (e)=>{
   }
 });
 
-// Handle Save Deposit (Firebase)
+// Handle Save Deposit (Firebase tied to User UID)
 document.getElementById('fdForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
+  if(!currentUser) return;
+
   const start = document.getElementById('fdStart').value;
   const maturity = document.getElementById('fdMaturity').value;
   if(parseDate(maturity) <= parseDate(start)){
@@ -1497,7 +1560,7 @@ document.getElementById('fdForm').addEventListener('submit', async (e)=>{
   };
   
   try {
-    await db.collection('deposits').doc(record.id).set(record);
+    await db.collection('users').doc(currentUser.uid).collection('deposits').doc(record.id).set(record);
     if(editingFdId){
       const idx = state.deposits.findIndex(d=>d.id===editingFdId);
       state.deposits[idx] = record;
@@ -1510,10 +1573,6 @@ document.getElementById('fdForm').addEventListener('submit', async (e)=>{
     alert("Error saving deposit: " + err.message);
   }
 });
-
-/* ---------------- INIT ---------------- */
-// Instead of rendering directly, we fetch from Firebase first
-loadData();
 
 })();
 </script>
