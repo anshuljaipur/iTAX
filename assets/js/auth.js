@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnLogout.addEventListener('click', async () => {
             await signOut(auth);
             window.location.reload(); // Refresh to clear memory
+            localStorage.removeItem('activeView');
+            localStorage.removeItem('activeFY');
         });
     }
 
