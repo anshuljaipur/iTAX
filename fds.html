@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Family Fixed Deposit Ledger</title>
+<!-- Mobile App Optimization Meta Tags -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0F1729">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Family FD Ledger</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -25,7 +31,7 @@
   --navy-text:#E9E6DA;
   --navy-text-soft:#AEB6C9;
   --shadow: 0 8px 24px rgba(15,23,41,0.18);
-  --radius: 3px;
+  --radius: 4px;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
@@ -34,6 +40,8 @@ body{
   font-family:'Inter',sans-serif;
   color:var(--ink);
   min-height:100vh;
+  /* Prevent overscroll bounce on mobile */
+  overscroll-behavior-y: none;
 }
 .mono{font-family:'IBM Plex Mono',monospace;}
 button{font-family:inherit;cursor:pointer;}
@@ -44,6 +52,7 @@ input,select{font-family:inherit;}
   position: fixed; inset: 0; background: var(--cover-navy-deep); z-index: 9999;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   color: var(--navy-text);
+  padding: 20px; text-align: center;
 }
 #loginOverlay .seal { width: 80px; height: 80px; margin-bottom: 24px; }
 #loginOverlay .seal span { font-size: 1.5rem; }
@@ -56,11 +65,12 @@ input,select{font-family:inherit;}
   background:
     radial-gradient(circle at 85% -10%, rgba(201,162,75,0.14), transparent 45%),
     linear-gradient(180deg, var(--cover-navy) 0%, var(--cover-navy-deep) 100%);
-  padding:38px 28px 26px;
+  /* Mobile safe area padding for notch devices */
+  padding: max(env(safe-area-inset-top, 38px), 38px) 20px 26px;
   border-bottom:1px solid rgba(201,162,75,0.35);
 }
 .cover-inner{max-width:1180px;margin:0 auto;}
-.cover-top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+.cover-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
 .cover-title-wrap{display:flex;align-items:center;gap:16px;}
 .seal{
   width:56px;height:56px;border-radius:50%;
@@ -81,39 +91,39 @@ input,select{font-family:inherit;}
 .cover-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .btn{
   border:1px solid rgba(201,162,75,0.55);background:transparent;color:var(--navy-text);
-  padding:9px 14px;border-radius:var(--radius);font-size:0.78rem;letter-spacing:0.03em;
+  padding:10px 16px;border-radius:var(--radius);font-size:0.82rem;letter-spacing:0.03em;
   text-transform:uppercase;font-weight:600;transition:background 0.15s, color 0.15s;
-  white-space:nowrap;
+  white-space:nowrap; display:inline-flex; align-items:center; justify-content:center;
 }
 .btn:hover{background:rgba(201,162,75,0.14);}
 .btn-brass{background:var(--brass);border-color:var(--brass);color:#1c1607;}
 .btn-brass:hover{background:var(--brass-bright);}
 .btn-ghost-light{color:var(--navy-text-soft);border-color:rgba(233,230,218,0.25);}
 .btn-ghost-light:hover{background:rgba(233,230,218,0.08);}
-.btn-small{padding:6px 10px;font-size:0.7rem;}
+.btn-small{padding:8px 12px;font-size:0.75rem;}
 .btn-danger{border-color:rgba(154,59,40,0.7);color:#e8b6a8;}
 .btn-danger:hover{background:rgba(154,59,40,0.25);}
 
 .summary-strip{
-  margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
   gap:1px;background:rgba(201,162,75,0.25);border:1px solid rgba(201,162,75,0.25);border-radius:var(--radius);overflow:hidden;
 }
 .summary-cell{background:var(--cover-navy);padding:14px 16px;}
 .summary-cell .label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--navy-text-soft);margin-bottom:6px;}
 .summary-cell .value{font-family:'IBM Plex Mono',monospace;font-size:1.15rem;color:var(--brass-bright);font-weight:600;}
 .summary-cell .value.small{font-size:1rem;color:var(--navy-text);}
-.summary-scope{color:var(--navy-text-soft);font-size:0.72rem;margin-top:10px;letter-spacing:0.02em;}
+.summary-scope{color:var(--navy-text-soft);font-size:0.75rem;margin-top:12px;letter-spacing:0.02em;}
 .summary-scope b{color:var(--brass-bright);font-weight:600;}
 
 /* ===== TAB BAR (people) ===== */
 .tabbar{
-  max-width:1180px;margin:24px auto 0;padding:0 28px;display:flex;gap:6px;
-  overflow-x:auto;overflow-y:hidden;
+  max-width:1180px;margin:20px auto 0;padding:0 20px;display:flex;gap:6px;
+  overflow-x:auto;overflow-y:hidden; -webkit-overflow-scrolling: touch;
 }
 .ptab{
   flex:none;background:var(--cover-navy-light);border:1px solid rgba(201,162,75,0.35);border-bottom:none;
-  padding:11px 16px;border-radius:6px 6px 0 0;cursor:pointer;
-  display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--navy-text-soft);
+  padding:12px 18px;border-radius:6px 6px 0 0;cursor:pointer;
+  display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--navy-text-soft);
   transition:background 0.15s, color 0.15s;
 }
 .ptab .dot{width:8px;height:8px;border-radius:50%;flex:none;}
@@ -123,128 +133,139 @@ input,select{font-family:inherit;}
 
 /* ===== PAGE / MAIN PANEL ===== */
 .page{background:var(--paper);max-width:1180px;margin:0 auto;box-shadow:var(--shadow);position:relative;min-height:60vh;}
-.page-inner{padding:30px 28px 50px;}
+.page-inner{padding:24px 20px 50px;}
 
-.view-toggle{display:flex;gap:0;border-bottom:1px solid var(--paper-line);margin-bottom:22px;}
+.view-toggle{display:flex;gap:0;border-bottom:1px solid var(--paper-line);margin-bottom:22px; overflow-x:auto;}
 .view-btn{
-  background:none;border:none;padding:10px 4px;margin-right:26px;font-size:0.85rem;font-weight:600;
-  color:var(--ink-soft);border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:0.04em;
+  background:none;border:none;padding:12px 6px;margin-right:24px;font-size:0.88rem;font-weight:600;
+  color:var(--ink-soft);border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:0.04em; white-space:nowrap;
 }
 .view-btn.active{color:var(--ink);border-color:var(--brass);}
 
-.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px;}
-.field-group{display:flex;flex-direction:column;gap:3px;}
-.field-group label{font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:18px;}
+.field-group{display:flex;flex-direction:column;gap:4px;}
+.field-group label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);}
 select.filter, input.filter{
-  border:1px solid var(--paper-line);background:var(--paper-raised);padding:7px 9px;border-radius:var(--radius);
-  font-size:0.82rem;color:var(--ink);min-width:130px;
+  border:1px solid var(--paper-line);background:var(--paper-raised);padding:9px 10px;border-radius:var(--radius);
+  color:var(--ink);min-width:130px;
+  /* 16px font-size is critical on mobile to stop iOS auto-zoom on form elements */
+  font-size: 16px; 
 }
 input.filter{min-width:170px;}
 .toolbar .spacer{flex:1;}
 
 /* empty state */
 .empty-card{
-  border:1px dashed var(--paper-line);background:var(--paper-raised);padding:40px 24px;text-align:center;
+  border:1px dashed var(--paper-line);background:var(--paper-raised);padding:40px 20px;text-align:center;
   border-radius:var(--radius);color:var(--ink-soft);
 }
-.empty-card h3{font-family:'Fraunces',serif;color:var(--ink);margin:0 0 6px;font-weight:600;}
-.empty-card .btn-brass{margin-top:14px;color:#1c1607;}
+.empty-card h3{font-family:'Fraunces',serif;color:var(--ink);margin:0 0 8px;font-weight:600;font-size:1.2rem;}
+.empty-card .btn-brass{margin-top:16px;color:#1c1607;}
 
 /* ===== TABLE ===== */
-.table-wrap{overflow-x:auto;border:1px solid var(--paper-line);background:var(--paper-raised);}
+.table-wrap{
+  overflow-x:auto; border:1px solid var(--paper-line); background:var(--paper-raised);
+  -webkit-overflow-scrolling: touch; /* smooth mobile scrolling */
+}
 table{border-collapse:collapse;width:100%;min-width:1080px;}
 thead th{
-  text-align:left;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);
-  padding:10px 12px;border-bottom:1px solid var(--paper-line);background:var(--paper);position:sticky;top:0;
-  cursor:pointer;user-select:none;white-space:nowrap;
+  text-align:left;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);
+  padding:12px 14px;border-bottom:1px solid var(--paper-line);background:var(--paper);position:sticky;top:0;
+  cursor:pointer;user-select:none;white-space:nowrap; z-index: 10;
 }
 thead th:hover{color:var(--brass-deep);}
-thead th .arrow{opacity:0.5;margin-left:3px;font-size:0.6rem;}
-tbody td{padding:11px 12px;border-bottom:1px solid var(--paper-line);font-size:0.83rem;vertical-align:middle;white-space:nowrap;}
+thead th .arrow{opacity:0.5;margin-left:4px;font-size:0.6rem;}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--paper-line);font-size:0.86rem;vertical-align:middle;white-space:nowrap;}
 tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover{background:rgba(169,128,61,0.06);}
 td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
-.holder-chip{display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;}
+.holder-chip{display:inline-flex;align-items:center;gap:6px;font-size:0.82rem;}
 .holder-chip .dot{width:7px;height:7px;border-radius:50%;flex:none;}
 .bank-cell .bank-name{font-weight:600;}
-.bank-cell .note{display:block;font-size:0.7rem;color:var(--ink-soft);}
+.bank-cell .note{display:block;font-size:0.75rem;color:var(--ink-soft);margin-top:2px;}
 .gain-pos{color:var(--stamp-green);}
 .gain-neg{color:var(--stamp-rust);}
-.row-actions{display:flex;gap:6px;}
+.row-actions{display:flex;gap:8px;}
 .icon-btn{
-  border:1px solid var(--paper-line);background:var(--paper);width:26px;height:26px;border-radius:3px;
-  display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--ink-soft);
+  border:1px solid var(--paper-line);background:var(--paper);width:32px;height:32px;border-radius:4px;
+  display:inline-flex;align-items:center;justify-content:center;font-size:0.85rem;color:var(--ink-soft);
 }
 .icon-btn:hover{border-color:var(--brass);color:var(--brass-deep);}
 
 .badge{
-  display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;
+  display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;
   border:1.5px solid currentColor;border-radius:999px;font-family:'IBM Plex Mono',monospace;
-  font-size:0.63rem;letter-spacing:0.05em;text-transform:uppercase;transform:rotate(-2deg);font-weight:600;
+  font-size:0.65rem;letter-spacing:0.05em;text-transform:uppercase;transform:rotate(-2deg);font-weight:600;
 }
 .badge.active{color:var(--stamp-green);}
 .badge.soon{color:var(--stamp-rust);}
 .badge.matured{color:var(--brass-deep);}
 .badge.broken{color:#8A5A2B;border-style:dashed;}
 
-.selection-bar{display:flex;align-items:center;gap:10px;font-size:0.74rem;color:var(--brass-deep);}
+.selection-bar{display:flex;align-items:center;gap:12px;font-size:0.78rem;color:var(--brass-deep);}
 .selection-bar a{color:var(--ink);text-decoration:underline;cursor:pointer;}
-.rowcheck, #selectAllCheck{width:15px;height:15px;cursor:pointer;}
+.rowcheck, #selectAllCheck{width:18px;height:18px;cursor:pointer;}
 
 /* ===== PERSON MINI CARDS ===== */
-.person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:24px;}
-.person-card{border:1px solid var(--paper-line);background:var(--paper-raised);padding:12px 14px;border-radius:var(--radius);}
-.person-card .pname{display:flex;align-items:center;gap:7px;font-weight:600;font-size:0.85rem;margin-bottom:8px;}
-.person-card .dot{width:9px;height:9px;border-radius:50%;flex:none;}
-.person-card .prow{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--ink-soft);margin-top:3px;}
-.person-card .prow b{color:var(--ink);font-family:'IBM Plex Mono',monospace;font-weight:600;}
+.person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
+.person-card{border:1px solid var(--paper-line);background:var(--paper-raised);padding:14px;border-radius:var(--radius);}
+.person-card .pname{display:flex;align-items:center;gap:8px;font-weight:600;font-size:0.9rem;margin-bottom:10px;}
+.person-card .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+.person-card .prow{display:flex;justify-content:space-between;font-size:0.75rem;color:var(--ink-soft);margin-top:4px;}
+.person-card .prow b{color:var(--ink);font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.8rem;}
 
 /* ===== STATEMENT ===== */
 .statement-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--ink);}
-.statement-head h2{font-family:'Fraunces',serif;margin:0 0 4px;font-size:1.4rem;}
-.statement-head .meta{font-size:0.76rem;color:var(--ink-soft);}
-.statement-actions{display:flex;gap:8px;}
-.btn-outline{border:1px solid var(--ink);background:none;color:var(--ink);padding:8px 13px;border-radius:var(--radius);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;}
+.statement-head h2{font-family:'Fraunces',serif;margin:0 0 6px;font-size:1.5rem;}
+.statement-head .meta{font-size:0.8rem;color:var(--ink-soft);}
+.statement-actions{display:flex;gap:8px; flex-wrap:wrap;}
+.btn-outline{border:1px solid var(--ink);background:none;color:var(--ink);padding:10px 14px;border-radius:var(--radius);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;}
 .btn-outline:hover{background:var(--ink);color:var(--paper);}
-.statement-group-title{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--brass-deep);margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--paper-line);}
-.statement-totals{margin-top:18px;border-top:2px solid var(--ink);padding-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
-.statement-totals .t-label{font-size:0.68rem;text-transform:uppercase;color:var(--ink-soft);letter-spacing:0.05em;}
-.statement-totals .t-value{font-family:'IBM Plex Mono',monospace;font-size:1.05rem;font-weight:600;margin-top:3px;}
-.statement-footnote{margin-top:28px;font-size:0.72rem;color:var(--ink-soft);line-height:1.6;border-top:1px dashed var(--paper-line);padding-top:14px;}
+.statement-group-title{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--brass-deep);margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--paper-line);}
+.statement-totals{margin-top:20px;border-top:2px solid var(--ink);padding-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;}
+.statement-totals .t-label{font-size:0.7rem;text-transform:uppercase;color:var(--ink-soft);letter-spacing:0.05em;}
+.statement-totals .t-value{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;margin-top:4px;}
+.statement-footnote{margin-top:30px;font-size:0.75rem;color:var(--ink-soft);line-height:1.6;border-top:1px dashed var(--paper-line);padding-top:16px;}
 .statement-footnote b{color:var(--ink);}
 
 /* ===== MODAL ===== */
 .modal-backdrop{
-  position:fixed;inset:0;background:rgba(15,23,41,0.55);display:flex;align-items:center;justify-content:center;
-  z-index:50;padding:20px;
+  position:fixed;inset:0;background:rgba(15,23,41,0.65);display:flex;align-items:flex-end;justify-content:center;
+  z-index:9999; padding:0; /* changed padding for mobile bottom-sheet feel */
 }
 .modal-backdrop[hidden]{display:none !important;}
 .modal{
-  background:var(--paper-raised);width:100%;max-width:540px;border-radius:4px;box-shadow:var(--shadow);
-  max-height:90vh;overflow-y:auto;
+  background:var(--paper-raised);width:100%;max-width:540px;border-radius:12px 12px 0 0;box-shadow:var(--shadow);
+  max-height:90vh;overflow-y:auto; -webkit-overflow-scrolling: touch;
 }
-.modal-header{padding:18px 22px;border-bottom:1px solid var(--paper-line);display:flex;justify-content:space-between;align-items:center;}
-.modal-header h3{margin:0;font-family:'Fraunces',serif;font-size:1.1rem;}
-.modal-close{border:none;background:none;font-size:1.2rem;color:var(--ink-soft);line-height:1;}
-.modal-body{padding:20px 22px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media (min-width:640px){
+  .modal-backdrop{align-items:center; padding:20px;}
+  .modal{border-radius:6px;}
+}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--paper-line);display:flex;justify-content:space-between;align-items:center; position:sticky; top:0; background:var(--paper-raised); z-index:10;}
+.modal-header h3{margin:0;font-family:'Fraunces',serif;font-size:1.2rem;}
+.modal-close{border:none;background:none;font-size:1.5rem;color:var(--ink-soft);line-height:1; padding:0;}
+.modal-body{padding:24px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .form-grid .full{grid-column:1/-1;}
-.form-field label{display:block;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:5px;}
+.form-field label{display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:6px;}
 .form-field input, .form-field select{
-  width:100%;padding:9px 10px;border:1px solid var(--paper-line);border-radius:var(--radius);background:var(--paper);
-  font-size:0.86rem;color:var(--ink);
+  width:100%;padding:11px 12px;border:1px solid var(--paper-line);border-radius:var(--radius);background:var(--paper);
+  color:var(--ink); font-size:16px; /* Prevents iOS Zoom */
 }
-.form-hint{font-size:0.68rem;color:var(--ink-soft);margin-top:4px;}
-.modal-footer{padding:16px 22px;border-top:1px solid var(--paper-line);display:flex;justify-content:flex-end;gap:10px;}
+.form-hint{font-size:0.7rem;color:var(--ink-soft);margin-top:6px;}
+.modal-footer{padding:18px 24px;border-top:1px solid var(--paper-line);display:flex;justify-content:flex-end;gap:12px; position:sticky; bottom:0; background:var(--paper-raised); z-index:10;}
 
-.legend{margin-top:26px;font-size:0.72rem;color:var(--ink-soft);line-height:1.7;border-top:1px dashed var(--paper-line);padding-top:16px;}
+.legend{margin-top:30px;font-size:0.75rem;color:var(--ink-soft);line-height:1.7;border-top:1px dashed var(--paper-line);padding-top:18px;}
 .legend b{color:var(--ink);}
 
-.foot{max-width:1180px;margin:16px auto 40px;padding:0 28px;color:var(--navy-text-soft);font-size:0.7rem;text-align:center;}
+.foot{max-width:1180px;margin:20px auto 40px;padding:0 20px;color:var(--navy-text-soft);font-size:0.75rem;text-align:center;}
 
 @media (max-width:640px){
   .form-grid{grid-template-columns:1fr;}
-  .cover-top{flex-direction:column;}
+  .cover-top{flex-direction:column; gap:16px;}
+  .cover-actions{width:100%; justify-content:flex-start;}
+  .summary-strip{grid-template-columns: 1fr 1fr;}
   table{min-width:920px;}
 }
 
@@ -278,6 +299,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
         </div>
       </div>
       <div class="cover-actions no-print">
+        <button class="btn btn-ghost-light" id="btnImport">Import JSON</button>
         <button class="btn btn-ghost-light" id="btnExport">Export JSON</button>
         <button class="btn btn-brass" id="btnAddFd">+ Add Deposit</button>
         <button class="btn btn-danger" id="btnLogout">Sign Out</button>
@@ -359,6 +381,9 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 </main>
 
 <div class="foot">Data is saved securely and privately to your Google Account via Firebase Firestore.</div>
+
+<!-- Hidden File Input for Import -->
+<input type="file" id="importFile" accept="application/json" hidden>
 
 <!-- FD Modal -->
 <div class="modal-backdrop" id="fdModal" style="display:none;">
@@ -568,7 +593,6 @@ auth.onAuthStateChanged(user => {
 async function loadData() {
   if (!currentUser) return;
   try {
-    // Fetch from users/{userID}/people and users/{userID}/deposits
     const userRef = db.collection('users').doc(currentUser.uid);
     
     const peopleSnap = await userRef.collection('people').get();
@@ -587,7 +611,7 @@ async function loadData() {
 /* ---------------- HELPERS ---------------- */
 function uid(prefix){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
-function parseDate(s){ // yyyy-mm-dd -> local midnight Date
+function parseDate(s){ 
   if(!s) return null;
   const [y,m,d] = s.split('-').map(Number);
   return new Date(y, m-1, d);
@@ -626,7 +650,7 @@ function toDateInputValue(d){
   const yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
   return `${yyyy}-${mm}-${dd}`;
 }
-function fmtCurrencyPdf(n){ // PDF standard fonts can't render ₹
+function fmtCurrencyPdf(n){
   if(n===null||n===undefined||isNaN(n)) return '-';
   return 'Rs. ' + Number(n).toLocaleString('en-IN',{maximumFractionDigits:0});
 }
@@ -887,14 +911,12 @@ function renderPersonGrid(){
       if(confirm(`Remove ${p.name} and all ${state.deposits.filter(d=>d.personId===id).length} of their deposits?`)){
         try {
           const userRef = db.collection('users').doc(currentUser.uid);
-          // Delete from Firestore
           await userRef.collection('people').doc(id).delete();
           const fdIdsToDelete = state.deposits.filter(d => d.personId === id).map(d => d.id);
           for (let fdId of fdIdsToDelete) {
              await userRef.collection('deposits').doc(fdId).delete();
           }
           
-          // Update local state
           state.deposits = state.deposits.filter(d=>d.personId!==id);
           state.people = state.people.filter(pp=>pp.id!==id);
           if(state.activePerson===id) state.activePerson='all';
@@ -1291,7 +1313,7 @@ function openFdModal(fdId){
 }
 function closeFdModal(){ document.getElementById('fdModal').style.display='none'; editingFdId=null; }
 
-/* ---------------- EXPORT ---------------- */
+/* ---------------- EXPORT / IMPORT ---------------- */
 function downloadBlob(content, filename, type){
   const blob = new Blob([content], {type});
   const url = URL.createObjectURL(blob);
@@ -1304,6 +1326,59 @@ function downloadBlob(content, filename, type){
 function exportJSON(){
   const data = JSON.stringify({people:state.people, deposits:state.deposits}, null, 2);
   downloadBlob(data, 'family-fd-data.json', 'application/json');
+}
+
+// Read JSON file and push data to Firestore
+async function importJSONToFirestore(file) {
+  if(!currentUser) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(!Array.isArray(data.people) || !Array.isArray(data.deposits)) throw new Error('Invalid file structure');
+
+      const replace = confirm('Click OK to REPLACE all current cloud data with this file.\nClick Cancel to MERGE it with your existing data instead.');
+      const userRef = db.collection('users').doc(currentUser.uid);
+
+      // Simple loading alert (since multiple Firestore writes take a moment)
+      const btn = document.getElementById('btnImport');
+      const originalText = btn.textContent;
+      btn.textContent = "Importing...";
+      btn.disabled = true;
+
+      if (replace) {
+        // Clear existing people from Firestore
+        const pSnap = await userRef.collection('people').get();
+        for (let doc of pSnap.docs) await doc.ref.delete();
+        // Clear existing deposits from Firestore
+        const dSnap = await userRef.collection('deposits').get();
+        for (let doc of dSnap.docs) await doc.ref.delete();
+      }
+
+      // Write people
+      for (let p of data.people) {
+        await userRef.collection('people').doc(p.id).set(p);
+      }
+      // Write deposits
+      for (let d of data.deposits) {
+        await userRef.collection('deposits').doc(d.id).set(d);
+      }
+
+      btn.textContent = originalText;
+      btn.disabled = false;
+      alert('Import successful!');
+      
+      // Reload UI
+      loadData();
+
+    } catch(err) {
+      alert('Could not import this file: ' + err.message);
+      const btn = document.getElementById('btnImport');
+      btn.textContent = "Import JSON";
+      btn.disabled = false;
+    }
+  };
+  reader.readAsText(file);
 }
 
 function csvEscape(v){
@@ -1448,6 +1523,15 @@ function exportStatementPDF(){
 
 /* ---------------- EVENTS ---------------- */
 document.getElementById('btnExport').addEventListener('click', exportJSON);
+
+document.getElementById('btnImport').addEventListener('click', ()=>{
+  if(!currentUser) { alert("Please sign in first."); return; }
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  if(e.target.files[0]) importJSONToFirestore(e.target.files[0]);
+  e.target.value='';
+});
 
 document.getElementById('btnAddFd').addEventListener('click', ()=>{
   if(state.people.length===0){ alert('Add a family member first.'); openPersonModal(); return; }
