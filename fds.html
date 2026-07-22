@@ -735,10 +735,14 @@ function arrValue(fd, asOf){
   const maturity = parseDate(effMaturity(fd));
   const cap = asOf < maturity ? asOf : maturity;
   const days = daysBetween(start, cap);
-  if(days<=0) return 0;
+  
+  // FIX: If the FD starts today (0 days elapsed) or in the future, 
+  // fall back to showing the expected effective rate instead of 0.00%
+  if(days <= 0) return effectiveRate(fd);
+  
   const CV = currentValue(fd, asOf);
   const ratio = CV/fd.principal;
-  if(ratio<=0) return 0;
+  if(ratio <= 0) return 0;
   return Math.pow(ratio, 365/days) - 1;
 }
 
