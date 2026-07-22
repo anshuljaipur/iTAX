@@ -343,3 +343,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+/**
+ * ============================================================================
+ * STATE PERSISTENCE (Remember View & FY on Refresh)
+ * ============================================================================
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // --- 1. Persist Financial Year ---
+    const fySelector = document.getElementById('global-fy-selector');
+    if (fySelector) {
+        // Load saved FY on refresh
+        const savedFY = localStorage.getItem('activeFY');
+        if (savedFY) {
+            fySelector.value = savedFY;
+        }
+
+        // Save FY to storage whenever the user changes it
+        fySelector.addEventListener('change', (e) => {
+            localStorage.setItem('activeFY', e.target.value);
+        });
+    }
+
+    // --- 2. Persist Active View ---
+    // Listen to your existing 'viewChanged' event to save the current view
+    document.addEventListener('viewChanged', (e) => {
+        if (e.detail && e.detail.view) {
+            localStorage.setItem('activeView', e.detail.view);
+        }
+    });
+
+    // Restore view on page load
+    setTimeout(() => {
+        const savedView = localStorage.getItem('activeView');
+        
+        if (savedView && savedView !== 'dashboard') {
+            // Find the sidebar link that corresponds to the saved view
+            // (Adjust the selector depending on whether you use href="#view" or data-view="view")
+            const targetLink = document.querySelector(`.nav-link[href="#${savedView}"]`) || 
+                               document.querySelector(`[data-target="${savedView}"]`) ||
+                               document.querySelector(`a[onclick*="${savedView}"]`);
+            
+            if (targetLink) {
+                // Programmatically click the link to trigger your existing routing logic
+                targetLink.click();
+            } else {
+                // Fallback: If no link is found, manually dispatch your viewChanged event
+                // and hide/show the correct HTML sections manually.
+                document.querySelectorAll('.app-view').forEach(view => view.classList.add('d-none'));
+                const targetViewElement = document.getElementById(`view-${savedView}`);
+                if (targetViewElement) {
+                    targetViewElement.classList.remove('d-none');
+                    document.dispatchEvent(new CustomEvent('viewChanged', { detail: { view: savedView } }));
+                }
+            }
+        }
+    }, 100); // 100ms delay ensures your sidebar is fully loaded in the DOM before clicking
+});
