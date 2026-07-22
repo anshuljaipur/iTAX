@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         table.innerHTML = `
             <thead class="table-light">
                 <tr>
-                    <th colspan="3" class="text-center fs-5 py-3">INCOME TAX STATEMENT FOR FY 20${fyParts[0]}-20${fyParts[1]} (ASSESSMENT YEAR 20${ayStr})</th>
+                    <th colspan="3" class="text-center fs-5 py-3">INCOME TAX STATEMENT FOR FY ${fyParts[0]}-20${fyParts[1]} (ASSESSMENT YEAR ${ayStr})</th>
                 </tr>
                 <tr>
                     <td colspan="2"><b>Name:</b> ${currentClient.name}</td>
