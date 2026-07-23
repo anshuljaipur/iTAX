@@ -258,7 +258,6 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 
 .foot{max-width:1180px;margin:20px auto 40px;padding:0 20px;color:var(--navy-text-soft);font-size:0.75rem;text-align:center;}
 
-/* Payout Table Styles */
 .payout-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
 .payout-table th { font-size: 0.65rem; color: var(--ink-soft); text-transform: uppercase; border-bottom: 1px solid var(--paper-line); padding: 8px; text-align: left; }
 .payout-table td { font-size: 0.8rem; padding: 10px 8px; border-bottom: 1px solid var(--paper-line); }
@@ -302,6 +301,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
         </div>
       </div>
       <div class="cover-actions no-print">
+        <button class="btn btn-ghost-light" id="btnInterestCert">Interest Cert</button>
         <button class="btn btn-ghost-light" id="btnImport">Import JSON</button>
         <button class="btn btn-ghost-light" id="btnExport">Export JSON</button>
         <button class="btn btn-brass" id="btnAddFd">+ Add Deposit</button>
@@ -388,6 +388,40 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 
 <!-- Hidden File Input for Import -->
 <input type="file" id="importFile" accept="application/json" hidden>
+
+<!-- INTEREST CERTIFICATE MODAL -->
+<div class="modal-backdrop" id="certModal" style="display:none;">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>Generate Interest Certificate</h3>
+      <button class="modal-close" id="certModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-field full">
+          <label>Individual Account Holder</label>
+          <select id="certPerson" required></select>
+        </div>
+        <div class="form-field full">
+          <label>Financial Year (F.Y.)</label>
+          <select id="certFy" required>
+            <option value="2026">F.Y. 2026 – 2027 (Apr 2026 - Mar 2027)</option>
+            <option value="2025" selected>F.Y. 2025 – 2026 (Apr 2025 - Mar 2026)</option>
+            <option value="2024">F.Y. 2024 – 2025 (Apr 2024 - Mar 2025)</option>
+            <option value="2023">F.Y. 2023 – 2024 (Apr 2023 - Mar 2024)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-hint" style="margin-top:14px; color:var(--ink-soft); line-height:1.5;">
+        Generates an official Interest Certificate PDF summarizing gross interest accrued/received and TDS deducted during the selected Financial Year for Income Tax (ITR) filing.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-outline" id="certCancel">Cancel</button>
+      <button type="button" class="btn btn-brass" id="btnGenerateCertPdf">Download PDF Certificate</button>
+    </div>
+  </div>
+</div>
 
 <!-- Payout/Transactions Modal -->
 <div class="modal-backdrop" id="payoutModal" style="display:none;">
@@ -565,26 +599,22 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
         </div>
         
         <div class="form-grid">
-          <!-- Shown for ALL settled types -->
           <div class="form-field full">
             <label>TDS Deducted (₹)</label>
             <input type="number" id="settleTds" min="0" step="0.01" value="0" required>
           </div>
           
-          <!-- Shown if Close -->
           <div class="form-field full" id="settleCloseBlock" style="display:none;">
             <label>Final Net Amount Received to Bank (₹)</label>
             <input type="number" id="settleNetAmount" min="0" step="0.01">
             <div class="form-hint">The actual amount credited after TDS.</div>
           </div>
 
-          <!-- Shown if Auto Renew or Payout/Reinvest -->
           <div class="form-field full" id="settleRenewBlock" style="display:none;">
             <label>New Renewal Rate (%)</label>
             <input type="number" id="settleRenewalRate" min="0" step="0.01">
           </div>
 
-          <!-- Shown ONLY if Payout / Reinvest -->
           <div class="form-field full" id="settlePayoutBlock" style="display:none;">
             <label>Interest Payout Received (₹)</label>
             <input type="number" id="settleInterestPayout" min="0" step="0.01">
@@ -771,13 +801,11 @@ function isCumulative(fd){ return fd.interestType !== 'payout'; }
 function interestLabel(fd){
   return (isCumulative(fd) ? 'Cumulative' : 'Payout') + ' · ' + freqLabel(fd.compounding);
 }
-// Broken or Settled locks in the maturity timeline
 function effMaturity(fd){ 
   if(fd.broken) return fd.breakDate;
   if(fd.settled) return fd.maturityDate;
   return fd.maturityDate; 
 }
-// Returns manual override or final settled amount
 function effOverrideVal(fd){ 
   if(fd.broken) return fd.amountReceived;
   if(fd.settled) return fd.settlementAmount;
@@ -820,7 +848,6 @@ function maturityValue(fd){
 }
 
 function currentValue(fd, asOf){
-  // If settled, current value is forever locked at settlement amount
   if(fd.settled) return fd.settlementAmount;
   if(fd.broken) return fd.amountReceived;
 
@@ -848,7 +875,6 @@ function currentValue(fd, asOf){
   return fd.principal * Math.pow(1+r/n, n*t);
 }
 
-// Calculate sum of all transaction payouts for an FD (Net + TDS = Gross payout tracked)
 function getTotalPayouts(fd) {
   if(!fd.payouts || !Array.isArray(fd.payouts)) return 0;
   return fd.payouts.reduce((sum, p) => sum + (parseFloat(p.amount) || 0) + (parseFloat(p.tds) || 0), 0);
@@ -863,7 +889,7 @@ function arrValue(fd, asOf){
   if(days <= 0) return effectiveRate(fd); 
   
   const CV = currentValue(fd, cap); 
-  const totalP = getTotalPayouts(fd); // include any logged cash flows
+  const totalP = getTotalPayouts(fd); 
   const ratio = (CV + totalP) / fd.principal;
   if(ratio<=0) return 0;
   return Math.pow(ratio, 365/days) - 1;
@@ -894,6 +920,47 @@ function getInstructionLabel(val){
 
 function personById(id){ return state.people.find(p=>p.id===id); }
 function personColor(idx){ return PALETTE[idx % PALETTE.length]; }
+
+/* ---------------- INTEREST CERTIFICATE F.Y. MATH ---------------- */
+function getInterestAndTdsInFY(fd, fyStart, fyEnd) {
+  const start = parseDate(fd.startDate);
+  const mat = parseDate(effMaturity(fd));
+  let grossInterest = 0;
+  let tdsDeducted = 0;
+
+  // Check logged payouts in this FY first
+  if(fd.payouts && Array.isArray(fd.payouts)) {
+    fd.payouts.forEach(p => {
+      const pDate = parseDate(p.date);
+      if(pDate >= fyStart && pDate <= fyEnd) {
+        grossInterest += (parseFloat(p.amount) || 0) + (parseFloat(p.tds) || 0);
+        tdsDeducted += parseFloat(p.tds) || 0;
+      }
+    });
+  }
+
+  // For cumulative FDs or FDs with no transaction log, compute mathematical accrual over overlap
+  if (isCumulative(fd) || (!fd.payouts || fd.payouts.length === 0)) {
+    const periodStart = start > fyStart ? start : fyStart;
+    const periodEnd = mat < fyEnd ? mat : fyEnd;
+
+    if (periodStart < periodEnd && start < fyEnd && mat > fyStart) {
+      const valAtStart = currentValue(fd, periodStart);
+      const valAtEnd = currentValue(fd, periodEnd);
+      grossInterest += Math.max(0, valAtEnd - valAtStart);
+    }
+  }
+
+  // Include settlement TDS if settled within this FY
+  if (fd.settled && fd.tdsDeducted) {
+    const matDate = parseDate(fd.maturityDate);
+    if (matDate >= fyStart && matDate <= fyEnd) {
+      tdsDeducted += parseFloat(fd.tdsDeducted) || 0;
+    }
+  }
+
+  return { grossInterest, tdsDeducted };
+}
 
 /* ---------------- FILTER / SORT ---------------- */
 function getEnrichedDeposits(){
@@ -976,7 +1043,6 @@ function computeAggregates(list){
     wEirNum += r.eir * r.fd.principal;
     wArrNum += r.arr * r.fd.principal;
   });
-  // Total gain includes both the unrealized capital gain and the realized cash payouts
   agg.totalGain = (agg.totalCurrent - agg.totalPrincipal) + agg.totalPaidOut;
   agg.weightedEir = agg.totalPrincipal>0 ? wEirNum/agg.totalPrincipal : 0;
   agg.weightedArr = agg.totalPrincipal>0 ? wArrNum/agg.totalPrincipal : 0;
@@ -1344,8 +1410,8 @@ function renderAll(){
   } else {
     document.getElementById('ledgerView').hidden=true;
     document.getElementById('statementView').hidden=false;
-    document.getElementById('viewBtnLedger').classList.remove('active');
-    document.getElementById('viewBtnStatement').classList.add('active');
+    document.getElementById('viewBtnLedger').classList.add('active');
+    document.getElementById('viewBtnStatement').classList.remove('active');
     if(state.statementPerson!=='all' && !personById(state.statementPerson)) state.statementPerson='all';
     renderStatement();
   }
@@ -1410,6 +1476,105 @@ function openPersonModal(){
 }
 function closePersonModal(){ document.getElementById('personModal').style.display='none'; }
 
+// Interest Certificate Modal Logic
+function openCertModal() {
+  const sel = document.getElementById('certPerson');
+  sel.innerHTML = state.people.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  if (state.activePerson !== 'all') sel.value = state.activePerson;
+  document.getElementById('certModal').style.display = 'flex';
+}
+function closeCertModal() { document.getElementById('certModal').style.display = 'none'; }
+
+function exportInterestCertificatePDF() {
+  if (!window.jspdf) { alert('PDF library not loaded.'); return; }
+  const personId = document.getElementById('certPerson').value;
+  const person = personById(personId);
+  if (!person) { alert('Select a valid family member.'); return; }
+
+  const fyYear = parseInt(document.getElementById('certFy').value);
+  const fyStart = new Date(fyYear, 3, 1); // Apr 1
+  const fyEnd = new Date(fyYear + 1, 2, 31); // Mar 31
+
+  const personFds = state.deposits.filter(d => d.personId === personId);
+  if (personFds.length === 0) {
+    alert(`${person.name} has no deposits recorded.`);
+    return;
+  }
+
+  const certData = [];
+  let totalGrossInterest = 0;
+  let totalTdsDeducted = 0;
+
+  personFds.forEach(fd => {
+    const { grossInterest, tdsDeducted } = getInterestAndTdsInFY(fd, fyStart, fyEnd);
+    if (grossInterest > 0 || tdsDeducted > 0) {
+      certData.push([
+        fd.bank + (fd.note ? ` (${fd.note})` : ''),
+        fmtCurrencyPdf(fd.principal),
+        fd.rate.toFixed(2) + '%',
+        fmtDate(parseDate(fd.startDate)) + ' - ' + fmtDate(parseDate(fd.maturityDate)),
+        fmtCurrencyPdf(grossInterest),
+        fmtCurrencyPdf(tdsDeducted),
+        fmtCurrencyPdf(grossInterest - tdsDeducted)
+      ]);
+      totalGrossInterest += grossInterest;
+      totalTdsDeducted += tdsDeducted;
+    }
+  });
+
+  if (certData.length === 0) {
+    alert(`No interest was accrued or received for ${person.name} in F.Y. ${fyYear}–${fyYear+1}.`);
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+  // Header & Styling
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(22, 33, 58);
+  doc.text('INTEREST CERTIFICATE', 40, 45);
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(100);
+  doc.text(`Financial Year: ${fyYear} – ${fyYear + 1} (1st April ${fyYear} to 31st March ${fyYear + 1})`, 40, 62);
+  doc.text(`Generated on: ${fmtDate(new Date())}`, 40, 76);
+
+  doc.setLineWidth(1); doc.setDrawColor(200);
+  doc.line(40, 86, 555, 86);
+
+  // Holder Details
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(20);
+  doc.text(`Account Holder: ${person.name}`, 40, 106);
+
+  // Table
+  doc.autoTable({
+    startY: 120,
+    head: [['Bank / Note', 'Principal', 'Rate', 'Tenure Window', 'Gross Interest', 'TDS Deducted', 'Net Interest']],
+    body: certData,
+    styles: { fontSize: 8, cellPadding: 5 },
+    headStyles: { fillColor: [22, 33, 58], textColor: 255 },
+    foot: [['TOTALS', '', '', '', fmtCurrencyPdf(totalGrossInterest), fmtCurrencyPdf(totalTdsDeducted), fmtCurrencyPdf(totalGrossInterest - totalTdsDeducted)]],
+    footStyles: { fillColor: [246, 241, 228], textColor: [38, 36, 28], fontStyle: 'bold' },
+    margin: { left: 40, right: 40 }
+  });
+
+  let finalY = doc.lastAutoTable.finalY + 25;
+
+  // Formal Disclaimer
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(40);
+  doc.text('Summary for Income Tax Filing:', 40, finalY); finalY += 15;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(80);
+  doc.text(`• Total Interest Income (Income from Other Sources): ${fmtCurrencyPdf(totalGrossInterest)}`, 45, finalY); finalY += 13;
+  doc.text(`• Total Tax Deducted at Source (TDS under Sec 194A): ${fmtCurrencyPdf(totalTdsDeducted)}`, 45, finalY); finalY += 13;
+  doc.text(`• Net Amount Credited/Accrued: ${fmtCurrencyPdf(totalGrossInterest - totalTdsDeducted)}`, 45, finalY); finalY += 25;
+
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); doc.setTextColor(120);
+  doc.text('Note: This document is a computer-generated summary based on user-entered Fixed Deposit records and logged transactions. Please cross-verify with Form 26AS / AIS before final ITR submission.', 40, finalY, { maxWidth: 515 });
+
+  doc.save(`Interest-Certificate-${person.name.replace(/\s+/g, '-')}-FY${fyYear}-${fyYear+1}.pdf`);
+  closeCertModal();
+}
+
 // Payouts Modal Logic
 function openPayoutModal(fdId){
   const fd = state.deposits.find(d=>d.id===fdId);
@@ -1432,7 +1597,6 @@ function renderPayoutTable(fd) {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--ink-soft); padding:16px;">No transactions logged yet.</td></tr>`;
     return;
   }
-  // Sort descending by date
   const sorted = [...fd.payouts].sort((a,b) => parseDate(b.date) - parseDate(a.date));
   let html = '';
   sorted.forEach(p => {
@@ -1489,7 +1653,6 @@ document.getElementById('payoutForm').addEventListener('submit', async (e)=>{
     alert("Error logging payout: " + err.message);
   }
 });
-
 
 function openFdModal(fdId){
   editingFdId = fdId || null;
@@ -1560,13 +1723,11 @@ function openSettleModal(fdId){
   const instruction = fd.maturityInstruction || 'auto_renew';
   document.getElementById('settleInstructionText').textContent = getInstructionLabel(instruction);
   
-  // Reset fields
   document.getElementById('settleTds').value = '0';
   document.getElementById('settleNetAmount').value = '';
   document.getElementById('settleRenewalRate').value = '';
   document.getElementById('settleInterestPayout').value = '';
 
-  // Show logic
   const blockClose = document.getElementById('settleCloseBlock');
   const blockRenew = document.getElementById('settleRenewBlock');
   const blockPayout = document.getElementById('settlePayoutBlock');
@@ -1800,6 +1961,12 @@ function exportStatementPDF(){
 
 /* ---------------- EVENTS ---------------- */
 document.getElementById('btnExport').addEventListener('click', exportJSON);
+document.getElementById('btnInterestCert').addEventListener('click', ()=>{ if(state.people.length===0){ alert('Add a family member first.'); return; } openCertModal(); });
+document.getElementById('btnGenerateCertPdf').addEventListener('click', exportInterestCertificatePDF);
+document.getElementById('certModalClose').addEventListener('click', closeCertModal);
+document.getElementById('certCancel').addEventListener('click', closeCertModal);
+document.getElementById('certModal').addEventListener('click', (e)=>{ if(e.target.id==='certModal') closeCertModal(); });
+
 document.getElementById('btnImport').addEventListener('click', ()=>{ if(!currentUser) return; document.getElementById('importFile').click(); });
 document.getElementById('importFile').addEventListener('change', (e)=>{ if(e.target.files[0]) importJSONToFirestore(e.target.files[0]); e.target.value=''; });
 document.getElementById('btnAddFd').addEventListener('click', ()=>{ if(state.people.length===0){ alert('Add a family member first.'); openPersonModal(); return; } openFdModal(null); });
@@ -1941,7 +2108,6 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
     finalCalculatedAmount = oldFd.principal + interestPayout; 
     newFdPrincipal = oldFd.principal; 
     
-    // Automatically log this final payout in the transaction ledger
     if(!oldFd.payouts) oldFd.payouts = [];
     oldFd.payouts.push({
       id: uid('tx'),
@@ -1951,7 +2117,6 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
     });
   }
 
-  // 1. Update Old FD to mark as settled
   const updatedOldFd = {
     ...oldFd,
     settled: true,
@@ -1959,7 +2124,6 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
     tdsDeducted: tds
   };
 
-  // 2. Prepare new FD if renewed
   let newFd = null;
   if (instruction !== 'close') {
     const startObj = parseDate(oldFd.startDate);
