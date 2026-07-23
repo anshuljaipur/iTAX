@@ -233,16 +233,16 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 .modal-backdrop[hidden]{display:none !important;}
 .modal{
   background:var(--paper-raised);width:100%;max-width:540px;border-radius:12px 12px 0 0;box-shadow:var(--shadow);
-  max-height:90vh;overflow-y:auto; -webkit-overflow-scrolling: touch;
+  max-height:90vh;overflow-y:auto; -webkit-overflow-scrolling: touch; display:flex; flex-direction:column;
 }
 @media (min-width:640px){
   .modal-backdrop{align-items:center; padding:20px;}
-  .modal{border-radius:6px;}
+  .modal{border-radius:6px; max-height:85vh;}
 }
-.modal-header{padding:20px 24px;border-bottom:1px solid var(--paper-line);display:flex;justify-content:space-between;align-items:center; position:sticky; top:0; background:var(--paper-raised); z-index:10;}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--paper-line);display:flex;justify-content:space-between;align-items:center; position:sticky; top:0; background:var(--paper-raised); z-index:10; flex:none;}
 .modal-header h3{margin:0;font-family:'Fraunces',serif;font-size:1.2rem;}
 .modal-close{border:none;background:none;font-size:1.5rem;color:var(--ink-soft);line-height:1; padding:0;}
-.modal-body{padding:24px;}
+.modal-body{padding:24px; flex:1; overflow-y:auto;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .form-grid .full{grid-column:1/-1;}
 .form-field label{display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:6px;}
@@ -251,12 +251,18 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
   color:var(--ink); font-size:16px; 
 }
 .form-hint{font-size:0.7rem;color:var(--ink-soft);margin-top:6px;}
-.modal-footer{padding:18px 24px;border-top:1px solid var(--paper-line);display:flex;justify-content:flex-end;gap:12px; position:sticky; bottom:0; background:var(--paper-raised); z-index:10;}
+.modal-footer{padding:18px 24px;border-top:1px solid var(--paper-line);display:flex;justify-content:flex-end;gap:12px; position:sticky; bottom:0; background:var(--paper-raised); z-index:10; flex:none;}
 
 .legend{margin-top:30px;font-size:0.75rem;color:var(--ink-soft);line-height:1.7;border-top:1px dashed var(--paper-line);padding-top:18px;}
 .legend b{color:var(--ink);}
 
 .foot{max-width:1180px;margin:20px auto 40px;padding:0 20px;color:var(--navy-text-soft);font-size:0.75rem;text-align:center;}
+
+/* Payout Table Styles */
+.payout-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.payout-table th { font-size: 0.65rem; color: var(--ink-soft); text-transform: uppercase; border-bottom: 1px solid var(--paper-line); padding: 8px; text-align: left; }
+.payout-table td { font-size: 0.8rem; padding: 10px 8px; border-bottom: 1px solid var(--paper-line); }
+.payout-table th.num, .payout-table td.num { text-align: right; font-family: 'IBM Plex Mono', monospace; }
 
 @media (max-width:640px){
   .form-grid{grid-template-columns:1fr;}
@@ -352,8 +358,9 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
       <div id="ledgerTableHolder"></div>
 
       <div class="legend">
-        <b>EIR</b> (Effective Interest Rate) — the annual yield of the deposit once its compounding frequency is applied: (1 + r/n)ⁿ − 1. Not applicable when interest is paid out rather than reinvested.
-        <b>ARR</b> (Annualised Rate of Return) — the actual return achieved, calculating real elapsed days versus final net amount received. Freezes permanently once a deposit is marked as settled or broken.
+        <b>EIR</b> (Effective Interest Rate) — the annual yield of the deposit once its compounding frequency is applied.
+        <b>PAID OUT</b> — Total cumulative interest payouts recorded in the transaction log for this FD.
+        <b>ARR</b> (Annualised Rate of Return) — the actual yield, correctly factoring in all real-world cash withdrawals (interest payouts) over the exact elapsed days.
       </div>
     </section>
 
@@ -381,6 +388,52 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 
 <!-- Hidden File Input for Import -->
 <input type="file" id="importFile" accept="application/json" hidden>
+
+<!-- Payout/Transactions Modal -->
+<div class="modal-backdrop" id="payoutModal" style="display:none;">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3>Interest Transactions</h3>
+      <button class="modal-close" id="payoutModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="payoutFdId">
+      <div id="payoutFdInfo" style="margin-bottom:18px; font-size:0.85rem; color:var(--ink-soft); line-height:1.5;"></div>
+      
+      <div style="max-height: 220px; overflow-y: auto; margin-bottom: 24px; border: 1px solid var(--paper-line); border-radius: var(--radius); background: var(--paper);">
+        <table class="payout-table">
+          <thead style="position: sticky; top: 0; background: var(--paper-raised); z-index: 2;">
+            <tr><th>Date</th><th class="num">Net Received</th><th class="num">TDS</th><th></th></tr>
+          </thead>
+          <tbody id="payoutTableBody">
+            <!-- Rows injected via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <form id="payoutForm">
+        <h4 style="margin:0 0 12px; font-family:'Fraunces', serif; font-size:1.05rem;">Log New Payout</h4>
+        <div class="form-grid">
+          <div class="form-field full">
+            <label>Date Received</label>
+            <input type="date" id="payoutDate" required>
+          </div>
+          <div class="form-field">
+            <label>Net Amount Received (₹)</label>
+            <input type="number" id="payoutAmount" min="0" step="0.01" required>
+          </div>
+          <div class="form-field">
+            <label>TDS Deducted (₹)</label>
+            <input type="number" id="payoutTds" min="0" step="0.01" value="0">
+          </div>
+        </div>
+        <div style="margin-top:16px; text-align:right;">
+          <button type="submit" class="btn btn-brass" style="width:100%;">+ Add Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- FD Modal -->
 <div class="modal-backdrop" id="fdModal" style="display:none;">
@@ -795,16 +848,23 @@ function currentValue(fd, asOf){
   return fd.principal * Math.pow(1+r/n, n*t);
 }
 
+// Calculate sum of all transaction payouts for an FD (Net + TDS = Gross payout tracked)
+function getTotalPayouts(fd) {
+  if(!fd.payouts || !Array.isArray(fd.payouts)) return 0;
+  return fd.payouts.reduce((sum, p) => sum + (parseFloat(p.amount) || 0) + (parseFloat(p.tds) || 0), 0);
+}
+
 function arrValue(fd, asOf){
   const start = parseDate(fd.startDate);
   const maturity = parseDate(effMaturity(fd));
   const cap = (asOf < maturity && !fd.broken && !fd.settled) ? asOf : maturity;
   const days = daysBetween(start, cap);
   
-  if(days <= 0) return effectiveRate(fd); // Prevents divide by zero on day 1
+  if(days <= 0) return effectiveRate(fd); 
   
-  const CV = currentValue(fd, cap); // Measure ARR based on actual final/current cap
-  const ratio = CV/fd.principal;
+  const CV = currentValue(fd, cap); 
+  const totalP = getTotalPayouts(fd); // include any logged cash flows
+  const ratio = (CV + totalP) / fd.principal;
   if(ratio<=0) return 0;
   return Math.pow(ratio, 365/days) - 1;
 }
@@ -843,6 +903,7 @@ function getEnrichedDeposits(){
     return {
       fd, person,
       eir: effectiveRate(fd),
+      payoutsTotal: getTotalPayouts(fd),
       cv: currentValue(fd, today),
       mv: maturityValue(fd),
       arr: arrValue(fd, today),
@@ -864,6 +925,7 @@ function sortList(list){
       case 'rate': av=a.fd.rate; bv=b.fd.rate; break;
       case 'interest': av=interestLabel(a.fd); bv=interestLabel(b.fd); break;
       case 'eir': av=a.eir; bv=b.eir; break;
+      case 'payouts': av=a.payoutsTotal; bv=b.payoutsTotal; break;
       case 'cv': av=a.cv; bv=b.cv; break;
       case 'mv': av=a.mv; bv=b.mv; break;
       case 'arr': av=a.arr; bv=b.arr; break;
@@ -903,17 +965,19 @@ function getExportRows(){
 }
 
 function computeAggregates(list){
-  const agg = {count:list.length, totalPrincipal:0, totalCurrent:0, totalMaturity:0, maturingSoon:0};
+  const agg = {count:list.length, totalPrincipal:0, totalCurrent:0, totalMaturity:0, maturingSoon:0, totalPaidOut:0};
   let wEirNum=0, wArrNum=0;
   list.forEach(r=>{
     agg.totalPrincipal += r.fd.principal;
     agg.totalCurrent += r.cv;
     agg.totalMaturity += r.mv;
+    agg.totalPaidOut += r.payoutsTotal;
     if(r.status==='soon') agg.maturingSoon++;
     wEirNum += r.eir * r.fd.principal;
     wArrNum += r.arr * r.fd.principal;
   });
-  agg.totalGain = agg.totalCurrent - agg.totalPrincipal;
+  // Total gain includes both the unrealized capital gain and the realized cash payouts
+  agg.totalGain = (agg.totalCurrent - agg.totalPrincipal) + agg.totalPaidOut;
   agg.weightedEir = agg.totalPrincipal>0 ? wEirNum/agg.totalPrincipal : 0;
   agg.weightedArr = agg.totalPrincipal>0 ? wArrNum/agg.totalPrincipal : 0;
   return agg;
@@ -928,7 +992,7 @@ function renderHero(){
   document.getElementById('summaryStrip').innerHTML = `
     <div class="summary-cell"><div class="label">Total Principal</div><div class="value">${fmtCurrency(agg.totalPrincipal)}</div></div>
     <div class="summary-cell"><div class="label">Current Value</div><div class="value">${fmtCurrency(agg.totalCurrent)}</div></div>
-    <div class="summary-cell"><div class="label">Gain to Date</div><div class="value ${agg.totalGain>=0?'':''}" style="color:${agg.totalGain>=0?'#7fd3a3':'#e08a76'}">${fmtCurrency(agg.totalGain)}</div></div>
+    <div class="summary-cell"><div class="label">Gain + Payouts</div><div class="value ${agg.totalGain>=0?'':''}" style="color:${agg.totalGain>=0?'#7fd3a3':'#e08a76'}">${fmtCurrency(agg.totalGain)}</div></div>
     <div class="summary-cell"><div class="label">Weighted EIR</div><div class="value small">${fmtPct(agg.weightedEir)}</div></div>
     <div class="summary-cell"><div class="label">Weighted ARR</div><div class="value small">${fmtPct(agg.weightedArr)}</div></div>
     <div class="summary-cell"><div class="label">Deposits</div><div class="value small">${agg.count} ${agg.maturingSoon>0?`<span style="color:#e08a76;font-size:0.7rem;">(${agg.maturingSoon} soon)</span>`:''}</div></div>
@@ -1036,6 +1100,7 @@ const COLUMNS = [
   {key:'rate', label:'Nominal %', num:true},
   {key:'interest', label:'Interest'},
   {key:'eir', label:'EIR', num:true},
+  {key:'payouts', label:'Paid Out', num:true},
   {key:'cv', label:'Current Value', num:true},
   {key:'mv', label:'Maturity Value', num:true},
   {key:'arr', label:'ARR', num:true},
@@ -1076,10 +1141,11 @@ function renderLedgerTable(){
       if(r.fd.broken) maturityCell = `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
       if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
 
-      let actions = `<button class="icon-btn" data-editfd="${r.fd.id}" title="Edit">✎</button>
-                     <button class="icon-btn" data-delfd="${r.fd.id}" title="Delete">✕</button>`;
+      let actions = `
+        <button class="icon-btn" data-payoutfd="${r.fd.id}" title="Log Interest Payouts" style="color:var(--brass-deep); border-color:var(--paper-line); font-weight:700;">₹</button>
+        <button class="icon-btn" data-editfd="${r.fd.id}" title="Edit">✎</button>
+        <button class="icon-btn" data-delfd="${r.fd.id}" title="Delete">✕</button>`;
       
-      // Inject "Settle" button if it is matured but not yet processed
       if(r.status === 'matured' && !r.fd.settled) {
         actions = `<button class="btn-outline btn-small" style="color:var(--stamp-rust); border-color:var(--stamp-rust); margin-right:8px;" data-settlefd="${r.fd.id}">Settle</button>` + actions;
       }
@@ -1096,6 +1162,7 @@ function renderLedgerTable(){
         <td class="num">${r.fd.rate.toFixed(2)}%</td>
         <td>${interestLabel(r.fd)}</td>
         <td class="num">${fmtPct(r.eir)}</td>
+        <td class="num" style="color:var(--brass-deep);">${fmtCurrency(r.payoutsTotal)}</td>
         <td class="num ${gainClass}">${fmtCurrency(r.cv)}</td>
         <td class="num">${fmtCurrency(r.mv)}</td>
         <td class="num">${fmtPct(r.arr)}</td>
@@ -1118,6 +1185,7 @@ function renderLedgerTable(){
       renderHero();
     });
   });
+  holder.querySelectorAll('[data-payoutfd]').forEach(el=>{ el.addEventListener('click', ()=> openPayoutModal(el.getAttribute('data-payoutfd'))); });
   holder.querySelectorAll('[data-editfd]').forEach(el=>{ el.addEventListener('click', ()=> openFdModal(el.getAttribute('data-editfd'))); });
   holder.querySelectorAll('[data-settlefd]').forEach(el=>{ el.addEventListener('click', ()=> openSettleModal(el.getAttribute('data-settlefd'))); });
   
@@ -1193,7 +1261,7 @@ function renderStatement(){
   const generated = fmtDate(today);
 
   function statementTable(rows, showHolder){
-    let cols = `<tr><th>Bank / Note</th>${showHolder?'<th>Holder</th>':''}<th class="num">Principal</th><th class="num">Rate</th><th>Interest</th><th class="num">EIR</th><th class="num">Current Value</th><th class="num">Maturity Value</th><th class="num">ARR</th><th>Start</th><th>Maturity / Break</th><th>Status</th></tr>`;
+    let cols = `<tr><th>Bank / Note</th>${showHolder?'<th>Holder</th>':''}<th class="num">Principal</th><th class="num">Rate</th><th>Interest</th><th class="num">EIR</th><th class="num">Paid Out</th><th class="num">Current Value</th><th class="num">Maturity Value</th><th class="num">ARR</th><th>Start</th><th>Maturity / Break</th><th>Status</th></tr>`;
     let body='';
     rows.forEach(r=>{
       let maturityCell = fmtDate(r.maturity);
@@ -1207,6 +1275,7 @@ function renderStatement(){
         <td class="num">${r.fd.rate.toFixed(2)}%</td>
         <td>${interestLabel(r.fd)}</td>
         <td class="num">${fmtPct(r.eir)}</td>
+        <td class="num" style="color:var(--brass-deep);">${fmtCurrency(r.payoutsTotal)}</td>
         <td class="num">${fmtCurrency(r.cv)}</td>
         <td class="num">${fmtCurrency(r.mv)}</td>
         <td class="num">${fmtPct(r.arr)}</td>
@@ -1255,7 +1324,7 @@ function renderStatementTotals(agg){
   return `<div class="statement-totals">
     <div><div class="t-label">Total Principal</div><div class="t-value">${fmtCurrency(agg.totalPrincipal)}</div></div>
     <div><div class="t-label">Total Current Value</div><div class="t-value">${fmtCurrency(agg.totalCurrent)}</div></div>
-    <div><div class="t-label">Total Gain</div><div class="t-value">${fmtCurrency(agg.totalGain)}</div></div>
+    <div><div class="t-label">Total Gain + Payouts</div><div class="t-value">${fmtCurrency(agg.totalGain)}</div></div>
     <div><div class="t-label">Weighted EIR</div><div class="t-value">${fmtPct(agg.weightedEir)}</div></div>
     <div><div class="t-label">Weighted ARR</div><div class="t-value">${fmtPct(agg.weightedArr)}</div></div>
   </div>`;
@@ -1340,6 +1409,87 @@ function openPersonModal(){
   document.getElementById('personModal').style.display='flex';
 }
 function closePersonModal(){ document.getElementById('personModal').style.display='none'; }
+
+// Payouts Modal Logic
+function openPayoutModal(fdId){
+  const fd = state.deposits.find(d=>d.id===fdId);
+  if(!fd) return;
+  document.getElementById('payoutFdId').value = fd.id;
+  document.getElementById('payoutFdInfo').innerHTML = `<b>${escapeHtml(fd.bank)}</b> ${fd.note?`(${escapeHtml(fd.note)})`:''}<br>Principal: ${fmtCurrency(fd.principal)} · Rate: ${fd.rate}%`;
+  
+  document.getElementById('payoutDate').value = toDateInputValue(new Date());
+  document.getElementById('payoutAmount').value = '';
+  document.getElementById('payoutTds').value = '0';
+  
+  renderPayoutTable(fd);
+  document.getElementById('payoutModal').style.display='flex';
+}
+function closePayoutModal(){ document.getElementById('payoutModal').style.display='none'; }
+
+function renderPayoutTable(fd) {
+  const tbody = document.getElementById('payoutTableBody');
+  if(!fd.payouts || fd.payouts.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--ink-soft); padding:16px;">No transactions logged yet.</td></tr>`;
+    return;
+  }
+  // Sort descending by date
+  const sorted = [...fd.payouts].sort((a,b) => parseDate(b.date) - parseDate(a.date));
+  let html = '';
+  sorted.forEach(p => {
+    html += `<tr>
+      <td class="mono">${fmtDate(parseDate(p.date))}</td>
+      <td class="num" style="color:var(--stamp-green); font-weight:600;">${fmtCurrency(p.amount)}</td>
+      <td class="num" style="color:var(--stamp-rust);">${fmtCurrency(p.tds)}</td>
+      <td style="text-align:right;"><button class="icon-btn" data-delpayout="${p.id}" style="width:24px;height:24px;font-size:0.7rem;">✕</button></td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+  
+  tbody.querySelectorAll('[data-delpayout]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if(!confirm("Remove this transaction?")) return;
+      const pid = btn.getAttribute('data-delpayout');
+      fd.payouts = fd.payouts.filter(x => x.id !== pid);
+      try {
+        await db.collection('users').doc(currentUser.uid).collection('deposits').doc(fd.id).update({ payouts: fd.payouts });
+        renderPayoutTable(fd);
+        renderAll();
+      } catch(err) {
+        alert("Error deleting payout: " + err.message);
+      }
+    });
+  });
+}
+
+document.getElementById('payoutForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!currentUser) return;
+  const fdId = document.getElementById('payoutFdId').value;
+  const fd = state.deposits.find(d=>d.id===fdId);
+  if(!fd) return;
+  
+  if(!fd.payouts) fd.payouts = [];
+  const newPayout = {
+    id: uid('tx'),
+    date: document.getElementById('payoutDate').value,
+    amount: parseFloat(document.getElementById('payoutAmount').value) || 0,
+    tds: parseFloat(document.getElementById('payoutTds').value) || 0
+  };
+  
+  fd.payouts.push(newPayout);
+  
+  try {
+    await db.collection('users').doc(currentUser.uid).collection('deposits').doc(fd.id).update({ payouts: fd.payouts });
+    document.getElementById('payoutAmount').value = '';
+    document.getElementById('payoutTds').value = '0';
+    renderPayoutTable(fd);
+    renderAll();
+  } catch(err) {
+    alert("Error logging payout: " + err.message);
+  }
+});
+
 
 function openFdModal(fdId){
   editingFdId = fdId || null;
@@ -1488,7 +1638,10 @@ async function importJSONToFirestore(file) {
         for (let doc of dSnap.docs) await doc.ref.delete();
       }
       for (let p of data.people) await userRef.collection('people').doc(p.id).set(p);
-      for (let d of data.deposits) await userRef.collection('deposits').doc(d.id).set(d);
+      for (let d of data.deposits) {
+        if(!d.payouts) d.payouts = [];
+        await userRef.collection('deposits').doc(d.id).set(d);
+      }
 
       btn.textContent = originalText;
       btn.disabled = false;
@@ -1512,12 +1665,12 @@ function csvEscape(v){
 
 function exportLedgerCSV(){
   const list = getExportRows();
-  const headers = ['Bank','Note','Holder','Principal','Nominal Rate %','Interest Handling','EIR %','Current Value','Maturity Value','ARR %','Start Date','Maturity Date','Broken','Break Date','Amount Received','Status'];
+  const headers = ['Bank','Note','Holder','Principal','Nominal Rate %','Interest Handling','EIR %','Paid Out','Current Value','Maturity Value','ARR %','Start Date','Maturity Date','Broken','Break Date','Amount Received','Status'];
   let rows = [headers.join(',')];
   list.forEach(r=>{
     rows.push([
       csvEscape(r.fd.bank), csvEscape(r.fd.note), csvEscape(r.person?r.person.name:''),
-      r.fd.principal, r.fd.rate, csvEscape(interestLabel(r.fd)), (r.eir*100).toFixed(2),
+      r.fd.principal, r.fd.rate, csvEscape(interestLabel(r.fd)), (r.eir*100).toFixed(2), r.payoutsTotal.toFixed(2),
       r.cv.toFixed(2), r.mv.toFixed(2), (r.arr*100).toFixed(2),
       r.fd.startDate, r.fd.maturityDate, r.fd.broken?'Yes':'No', r.fd.breakDate||'', r.fd.amountReceived||'', statusLabel(r.status)
     ].join(','));
@@ -1528,12 +1681,12 @@ function exportLedgerCSV(){
 function exportStatementCSV(){
   const all = getEnrichedDeposits();
   const rows = state.statementPerson==='all' ? all : all.filter(r=>r.fd.personId===state.statementPerson);
-  const headers = ['Holder','Bank','Note','Principal','Nominal Rate %','Interest Handling','EIR %','Current Value','Maturity Value','ARR %','Start Date','Maturity Date','Broken','Break Date','Amount Received','Status'];
+  const headers = ['Holder','Bank','Note','Principal','Nominal Rate %','Interest Handling','EIR %','Paid Out','Current Value','Maturity Value','ARR %','Start Date','Maturity Date','Broken','Break Date','Amount Received','Status'];
   let out = [headers.join(',')];
   rows.forEach(r=>{
     out.push([
       csvEscape(r.person?r.person.name:''), csvEscape(r.fd.bank), csvEscape(r.fd.note),
-      r.fd.principal, r.fd.rate, csvEscape(interestLabel(r.fd)), (r.eir*100).toFixed(2),
+      r.fd.principal, r.fd.rate, csvEscape(interestLabel(r.fd)), (r.eir*100).toFixed(2), r.payoutsTotal.toFixed(2),
       r.cv.toFixed(2), r.mv.toFixed(2), (r.arr*100).toFixed(2),
       r.fd.startDate, r.fd.maturityDate, r.fd.broken?'Yes':'No', r.fd.breakDate||'', r.fd.amountReceived||'', statusLabel(r.status)
     ].join(','));
@@ -1543,7 +1696,7 @@ function exportStatementCSV(){
 }
 
 /* ---------------- PDF EXPORT ---------------- */
-const PDF_HEAD = ['Bank / Note','Holder','Principal','Rate','Interest','EIR','Current Value','Maturity Value','ARR','Start','Maturity / Break','Status'];
+const PDF_HEAD = ['Bank / Note','Holder','Principal','Rate','Interest','EIR','Paid Out','Current Value','Maturity Value','ARR','Start','Maturity / Break','Status'];
 function pdfRow(r, includeHolder){
   const row = [
     r.fd.bank + (r.fd.note?` (${r.fd.note})`:''),
@@ -1552,6 +1705,7 @@ function pdfRow(r, includeHolder){
     r.fd.rate.toFixed(2)+'%',
     interestLabel(r.fd),
     fmtPct(r.eir),
+    fmtCurrencyPdf(r.payoutsTotal),
     fmtCurrencyPdf(r.cv),
     fmtCurrencyPdf(r.mv),
     fmtPct(r.arr),
@@ -1583,7 +1737,7 @@ function exportLedgerPDF(){
     body: list.map(r=>pdfRow(r,true)),
     styles:{fontSize:8, cellPadding:4},
     headStyles:{fillColor:[22,33,58], textColor:255},
-    foot:[['Totals','', fmtCurrencyPdf(agg.totalPrincipal),'','','', fmtCurrencyPdf(agg.totalCurrent), fmtCurrencyPdf(agg.totalMaturity),'','','','']],
+    foot:[['Totals','', fmtCurrencyPdf(agg.totalPrincipal),'','','', fmtCurrencyPdf(agg.totalPaidOut), fmtCurrencyPdf(agg.totalCurrent), fmtCurrencyPdf(agg.totalMaturity),'','','','']],
     footStyles:{fillColor:[246,241,228], textColor:[38,36,28], fontStyle:'bold'},
     margin:{left:40,right:40}
   });
@@ -1670,9 +1824,12 @@ document.getElementById('viewBtnStatement').addEventListener('click', ()=>{ stat
 document.getElementById('filterStatus').addEventListener('change', (e)=>{ state.filterStatus=e.target.value; renderAll(); });
 document.getElementById('filterSearch').addEventListener('input', (e)=>{ state.search=e.target.value; renderHero(); renderLedgerTable(); });
 document.getElementById('statementPerson').addEventListener('change', (e)=>{ state.statementPerson=e.target.value; renderStatement(); });
+
 document.getElementById('fdModalClose').addEventListener('click', closeFdModal);
 document.getElementById('fdCancel').addEventListener('click', closeFdModal);
 document.getElementById('fdModal').addEventListener('click', (e)=>{ if(e.target.id==='fdModal') closeFdModal(); });
+document.getElementById('payoutModalClose').addEventListener('click', closePayoutModal);
+document.getElementById('payoutModal').addEventListener('click', (e)=>{ if(e.target.id==='payoutModal') closePayoutModal(); });
 document.getElementById('settleModalClose').addEventListener('click', closeSettleModal);
 document.getElementById('settleCancel').addEventListener('click', closeSettleModal);
 document.getElementById('settleModal').addEventListener('click', (e)=>{ if(e.target.id==='settleModal') closeSettleModal(); });
@@ -1719,6 +1876,8 @@ document.getElementById('fdForm').addEventListener('submit', async (e)=>{
     if(parseDate(breakDate) > parseDate(maturity)){ alert('Break date must be before maturity.'); return; }
   }
 
+  const existingPayouts = editingFdId ? (state.deposits.find(d=>d.id===editingFdId)?.payouts || []) : [];
+
   const record = {
     id: editingFdId || uid('fd'),
     personId: document.getElementById('fdHolder').value,
@@ -1735,7 +1894,7 @@ document.getElementById('fdForm').addEventListener('submit', async (e)=>{
     broken: broken,
     breakDate: breakDate,
     amountReceived: amountReceived,
-    // ensure new saves clear any old settlement flags unless explicitly preserved
+    payouts: existingPayouts,
     settled: false,
     settlementAmount: null
   };
@@ -1781,6 +1940,15 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
     newFdRate = parseFloat(document.getElementById('settleRenewalRate').value);
     finalCalculatedAmount = oldFd.principal + interestPayout; 
     newFdPrincipal = oldFd.principal; 
+    
+    // Automatically log this final payout in the transaction ledger
+    if(!oldFd.payouts) oldFd.payouts = [];
+    oldFd.payouts.push({
+      id: uid('tx'),
+      date: oldFd.maturityDate,
+      amount: interestPayout,
+      tds: tds
+    });
   }
 
   // 1. Update Old FD to mark as settled
@@ -1815,6 +1983,7 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
       broken: false,
       breakDate: null,
       amountReceived: null,
+      payouts: [],
       settled: false,
       settlementAmount: null
     };
@@ -1822,11 +1991,9 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
 
   try {
     const userRef = db.collection('users').doc(currentUser.uid).collection('deposits');
-    // Save old update
     await userRef.doc(updatedOldFd.id).update(updatedOldFd);
     state.deposits[fdIndex] = updatedOldFd;
 
-    // Save new record
     if (newFd) {
       await userRef.doc(newFd.id).set(newFd);
       state.deposits.push(newFd);
