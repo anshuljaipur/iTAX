@@ -359,7 +359,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 
       <div class="legend">
         <b>EIR</b> (Effective Interest Rate) — the annual yield of the deposit once its compounding frequency is applied.
-        <b>PAID OUT</b> — Total cumulative interest payouts recorded in the transaction log for this FD.
+        <b>PAID OUT</b> — Total cumulative interest payouts recorded in the transaction log for this FD (Excludes final principal returned on maturity).
         <b>ARR</b> (Annualised Rate of Return) — the actual yield, correctly factoring in all real-world cash withdrawals (interest payouts) over the exact elapsed days.
       </div>
     </section>
@@ -427,7 +427,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 <div class="modal-backdrop" id="payoutModal" style="display:none;">
   <div class="modal" style="max-width:500px;">
     <div class="modal-header">
-      <h3>Interest Transactions</h3>
+      <h3>Transaction Ledger</h3>
       <button class="modal-close" id="payoutModalClose">&times;</button>
     </div>
     <div class="modal-body">
@@ -437,7 +437,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
       <div style="max-height: 220px; overflow-y: auto; margin-bottom: 24px; border: 1px solid var(--paper-line); border-radius: var(--radius); background: var(--paper);">
         <table class="payout-table">
           <thead style="position: sticky; top: 0; background: var(--paper-raised); z-index: 2;">
-            <tr><th>Date</th><th class="num">Net Received</th><th class="num">TDS</th><th></th></tr>
+            <tr><th>Date / Note</th><th class="num">Net Received</th><th class="num">TDS</th><th></th></tr>
           </thead>
           <tbody id="payoutTableBody">
             <!-- Rows injected via JS -->
@@ -446,7 +446,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
       </div>
 
       <form id="payoutForm">
-        <h4 style="margin:0 0 12px; font-family:'Fraunces', serif; font-size:1.05rem;">Log New Payout</h4>
+        <h4 style="margin:0 0 12px; font-family:'Fraunces', serif; font-size:1.05rem;">Log New Interest Payout</h4>
         <div class="form-grid">
           <div class="form-field full">
             <label>Date Received</label>
@@ -595,7 +595,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
         <input type="hidden" id="settleFdId">
         <div style="margin-bottom:16px; font-size:0.85rem; color:var(--ink-soft); line-height:1.5;">
           This deposit was set to: <b id="settleInstructionText" style="color:var(--ink);"></b>.<br>
-          Fill in the final amounts below to lock in the true ARR. <span id="settleRenewHint" style="color:var(--brass-deep); font-weight:600;">If renewed, a new deposit will automatically be created.</span>
+          Fill in the final amounts below to lock in the true return rate. <span id="settleRenewHint" style="color:var(--brass-deep); font-weight:600;">If renewed, a new deposit will automatically be created.</span>
         </div>
         
         <div class="form-grid">
@@ -607,7 +607,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
           <div class="form-field full" id="settleCloseBlock" style="display:none;">
             <label>Final Net Amount Received to Bank (₹)</label>
             <input type="number" id="settleNetAmount" min="0" step="0.01">
-            <div class="form-hint">The actual amount credited after TDS.</div>
+            <div class="form-hint">The actual amount credited after TDS. This final closure amount will be officially logged in the transaction ledger.</div>
           </div>
 
           <div class="form-field full" id="settleRenewBlock" style="display:none;">
@@ -877,7 +877,8 @@ function currentValue(fd, asOf){
 
 function getTotalPayouts(fd) {
   if(!fd.payouts || !Array.isArray(fd.payouts)) return 0;
-  return fd.payouts.reduce((sum, p) => sum + (parseFloat(p.amount) || 0) + (parseFloat(p.tds) || 0), 0);
+  // Ignore 'isMaturity' payouts in this count so we don't accidentally display the returned principal in the 'Paid Out' interest column
+  return fd.payouts.reduce((sum, p) => p.isMaturity ? sum : sum + (parseFloat(p.amount) || 0) + (parseFloat(p.tds) || 0), 0);
 }
 
 function arrValue(fd, asOf){
@@ -928,9 +929,10 @@ function getInterestAndTdsInFY(fd, fyStart, fyEnd) {
   let grossInterest = 0;
   let tdsDeducted = 0;
 
-  // Check logged payouts in this FY first
+  // Check logged payouts in this FY first (skip the maturity payout flag to avoid counting principal)
   if(fd.payouts && Array.isArray(fd.payouts)) {
     fd.payouts.forEach(p => {
+      if (p.isMaturity) return; 
       const pDate = parseDate(p.date);
       if(pDate >= fyStart && pDate <= fyEnd) {
         grossInterest += (parseFloat(p.amount) || 0) + (parseFloat(p.tds) || 0);
@@ -1410,8 +1412,8 @@ function renderAll(){
   } else {
     document.getElementById('ledgerView').hidden=true;
     document.getElementById('statementView').hidden=false;
-    document.getElementById('viewBtnLedger').classList.add('active');
-    document.getElementById('viewBtnStatement').classList.remove('active');
+    document.getElementById('viewBtnLedger').classList.remove('active');
+    document.getElementById('viewBtnStatement').classList.add('active');
     if(state.statementPerson!=='all' && !personById(state.statementPerson)) state.statementPerson='all';
     renderStatement();
   }
@@ -1600,12 +1602,22 @@ function renderPayoutTable(fd) {
   const sorted = [...fd.payouts].sort((a,b) => parseDate(b.date) - parseDate(a.date));
   let html = '';
   sorted.forEach(p => {
-    html += `<tr>
-      <td class="mono">${fmtDate(parseDate(p.date))}</td>
-      <td class="num" style="color:var(--stamp-green); font-weight:600;">${fmtCurrency(p.amount)}</td>
-      <td class="num" style="color:var(--stamp-rust);">${fmtCurrency(p.tds)}</td>
-      <td style="text-align:right;"><button class="icon-btn" data-delpayout="${p.id}" style="width:24px;height:24px;font-size:0.7rem;">✕</button></td>
-    </tr>`;
+    // If this is a final maturity payout, style it uniquely
+    if (p.isMaturity) {
+       html += `<tr style="background: rgba(201,162,75,0.1);">
+        <td class="mono">${fmtDate(parseDate(p.date))}<br><span style="font-size:0.65rem; color:var(--brass-deep); font-family:'Inter', sans-serif; font-weight:600;">MATURITY PAYOUT</span></td>
+        <td class="num" style="color:var(--ink); font-weight:700;">${fmtCurrency(p.amount)}</td>
+        <td class="num" style="color:var(--stamp-rust);">${fmtCurrency(p.tds)}</td>
+        <td></td>
+      </tr>`;
+    } else {
+      html += `<tr>
+        <td class="mono">${fmtDate(parseDate(p.date))}</td>
+        <td class="num" style="color:var(--stamp-green); font-weight:600;">${fmtCurrency(p.amount)}</td>
+        <td class="num" style="color:var(--stamp-rust);">${fmtCurrency(p.tds)}</td>
+        <td style="text-align:right;"><button class="icon-btn" data-delpayout="${p.id}" style="width:24px;height:24px;font-size:0.7rem;">✕</button></td>
+      </tr>`;
+    }
   });
   tbody.innerHTML = html;
   
@@ -1638,7 +1650,8 @@ document.getElementById('payoutForm').addEventListener('submit', async (e)=>{
     id: uid('tx'),
     date: document.getElementById('payoutDate').value,
     amount: parseFloat(document.getElementById('payoutAmount').value) || 0,
-    tds: parseFloat(document.getElementById('payoutTds').value) || 0
+    tds: parseFloat(document.getElementById('payoutTds').value) || 0,
+    isMaturity: false
   };
   
   fd.payouts.push(newPayout);
@@ -2099,6 +2112,17 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
   if (instruction === 'close') {
     const net = parseFloat(document.getElementById('settleNetAmount').value);
     finalCalculatedAmount = net;
+    
+    // Auto-log the final payout to the transaction ledger 
+    if(!oldFd.payouts) oldFd.payouts = [];
+    oldFd.payouts.push({
+      id: uid('tx'),
+      date: oldFd.maturityDate,
+      amount: net,
+      tds: tds,
+      isMaturity: true // flags it so we don't accidentally count principal as interest
+    });
+
   } else if (instruction === 'renew_auto') {
     newFdRate = parseFloat(document.getElementById('settleRenewalRate').value);
     newFdPrincipal = finalCalculatedAmount; 
@@ -2113,7 +2137,8 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
       id: uid('tx'),
       date: oldFd.maturityDate,
       amount: interestPayout,
-      tds: tds
+      tds: tds,
+      isMaturity: false
     });
   }
 
