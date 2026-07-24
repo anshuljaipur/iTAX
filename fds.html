@@ -140,7 +140,8 @@ input,select{font-family:inherit;}
 }
 .view-btn.active{color:var(--ink);border-color:var(--brass);}
 
-.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:18px;}
+/* Updated Toolbar Alignments */
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:18px;}
 .field-group{display:flex;flex-direction:column;gap:4px;}
 .field-group label{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);}
 select.filter, input.filter{
@@ -150,10 +151,10 @@ select.filter, input.filter{
 input.filter{min-width:170px;}
 .toolbar .spacer{flex:1;}
 
-/* Selection Action Bar */
+/* Updated In-line Selection Action Bar */
 .selection-bar{
-  background: var(--paper-raised); padding: 6px 14px; border: 1px dashed var(--brass); 
-  border-radius: var(--radius); display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  display: flex; gap: 8px; align-items: center;
+  padding-right: 14px; border-right: 1px solid var(--paper-line);
 }
 .selection-bar a{color:var(--ink);text-decoration:underline;cursor:pointer; font-size: 0.75rem;}
 
@@ -182,9 +183,17 @@ tbody td{padding:12px 14px;border-bottom:1px solid var(--paper-line);font-size:0
 tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover{background:rgba(169,128,61,0.06);}
 
-/* Matured / Inactive Row Styling */
+/* Matured / Inactive Row Styling with Strikethrough */
 tbody tr.row-inactive { opacity: 0.65; background: rgba(0,0,0,0.015); }
 tbody tr.row-inactive:hover { opacity: 0.95; background: rgba(169,128,61,0.06); }
+tbody tr.row-inactive td.bank-cell,
+tbody tr.row-inactive td:nth-child(3),
+tbody tr.row-inactive td.num,
+tbody tr.row-inactive td.mono,
+tbody tr.row-inactive td.interest-cell {
+  text-decoration: line-through;
+  color: var(--ink-soft);
+}
 
 td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 
@@ -347,15 +356,15 @@ td.interest-cell { white-space: normal; line-height: 1.35; font-size: 0.8rem; mi
           </select>
         </div>
         <div class="field-group">
-          <label>Search bank</label>
-          <input class="filter" id="filterSearch" placeholder="e.g. HDFC, SBI...">
+          <label>Search Bank / Policy No.</label>
+          <input class="filter" id="filterSearch" placeholder="e.g. HDFC, 260322...">
         </div>
         
         <div class="spacer"></div>
-        <div class="selection-bar" id="selectionBar" hidden></div>
         
-        <div class="field-group">
-          <label>&nbsp;</label>
+        <!-- Action Bar & Export Buttons (Inline) -->
+        <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+          <div class="selection-bar" id="selectionBar" hidden></div>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-outline btn-small" id="btnExportCsv">Export CSV</button>
             <button class="btn btn-outline btn-small" id="btnExportPdf">Export PDF</button>
@@ -1036,7 +1045,10 @@ function getFilteredSorted(){
   }
   if(state.search.trim()){
     const q = state.search.trim().toLowerCase();
-    list = list.filter(r => r.fd.bank.toLowerCase().includes(q));
+    list = list.filter(r => 
+      r.fd.bank.toLowerCase().includes(q) || 
+      (r.fd.note && r.fd.note.toLowerCase().includes(q))
+    );
   }
   return sortList(list);
 }
@@ -1086,7 +1098,7 @@ function renderHero(){
     <div class="summary-cell"><div class="label">Weighted ARR</div><div class="value small">${fmtPct(agg.weightedArr)}</div></div>
     <div class="summary-cell"><div class="label">Deposits</div><div class="value small">${agg.count} ${agg.maturingSoon>0?`<span style="color:#e08a76;font-size:0.7rem;">(${agg.maturingSoon} soon)</span>`:''}</div></div>
   `;
-  document.getElementById('summaryScope').innerHTML = `Showing: <b>${scopeName}</b>${state.filterStatus!=='all' ? ' · Status: <b>'+statusLabel(state.filterStatus)+'</b>' : ''}${state.search? ' · Bank search: <b>"'+state.search+'"</b>':''} · <i>Excludes matured/settled items from totals</i>`;
+  document.getElementById('summaryScope').innerHTML = `Showing: <b>${scopeName}</b>${state.filterStatus!=='all' ? ' · Status: <b>'+statusLabel(state.filterStatus)+'</b>' : ''}${state.search? ' · Search: <b>"'+state.search+'"</b>':''} · <i>Excludes inactive items from totals</i>`;
 }
 
 function renderTabs(){
@@ -1226,10 +1238,10 @@ function renderLedgerTable(){
       const gainClass = r.cv >= r.fd.principal ? 'gain-pos' : 'gain-neg';
       
       let maturityCell = fmtDate(r.maturity);
-      if(r.fd.broken) maturityCell = `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
-      if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
+      if(r.fd.broken) maturityCell = `<span>${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;text-decoration:none;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
+      if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;text-decoration:none;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
 
-      // Define CSS class for inactive rows to push visual focus down
+      // Define CSS class for inactive rows to push visual focus down and strike through text
       const inactiveClass = (r.status === 'matured' || r.status === 'settled' || r.status === 'broken') ? 'row-inactive' : '';
 
       body += `<tr class="${inactiveClass}">
@@ -1237,7 +1249,7 @@ function renderLedgerTable(){
         <td class="bank-cell">
           <span class="bank-name">${escapeHtml(r.fd.bank)}</span>
           ${r.fd.note ? `<span class="note">${escapeHtml(r.fd.note)}</span>` : ''}
-          ${r.fd.maturityInstruction ? `<span class="note" style="color:var(--brass-deep)">${getInstructionLabel(r.fd.maturityInstruction)}</span>` : ''}
+          ${r.fd.maturityInstruction ? `<span class="note" style="color:var(--brass-deep);text-decoration:none;">${getInstructionLabel(r.fd.maturityInstruction)}</span>` : ''}
         </td>
         <td><span class="holder-chip"><span class="dot" style="background:${personColor(idx)}"></span>${escapeHtml(r.person?r.person.name:'—')}</span></td>
         <td class="num">${fmtCurrency(r.fd.principal)}</td>
@@ -1294,7 +1306,7 @@ function renderSelectionInfo(){
   if(state.selected.size===0){ bar.hidden = true; bar.innerHTML=''; return; }
   bar.hidden = false;
   
-  let html = `<span style="color:var(--ink); font-weight:600; font-size:0.85rem;">${state.selected.size} Selected</span> <span style="color:var(--paper-line);">|</span> `;
+  let html = `<span style="font-size:0.8rem; color:var(--ink-soft); margin-right:4px;"><b>${state.selected.size}</b> selected</span>`;
   
   if(state.selected.size === 1) {
     const fdId = Array.from(state.selected)[0];
@@ -1302,15 +1314,15 @@ function renderSelectionInfo(){
     
     // Settle Button
     if (r && r.status === 'matured' && !r.fd.settled) {
-      html += `<button class="btn-outline btn-small" id="actionSettle" style="color:var(--stamp-rust); border-color:var(--stamp-rust);">Settle</button>`;
+      html += `<button class="btn btn-outline btn-small" id="actionSettle" style="color:var(--stamp-rust); border-color:var(--stamp-rust);">Settle</button>`;
     }
     
-    html += `<button class="btn-outline btn-small" id="actionPayout" style="color:var(--brass-deep); border-color:var(--brass-deep);">₹ Payouts</button>`;
-    html += `<button class="btn-outline btn-small" id="actionEdit">✎ Edit</button>`;
+    html += `<button class="btn btn-outline btn-small" id="actionPayout" style="color:var(--brass-deep); border-color:var(--brass-deep);">₹ Payouts</button>`;
+    html += `<button class="btn btn-outline btn-small" id="actionEdit">✎ Edit</button>`;
   }
   
-  html += `<button class="btn-outline btn-small" id="actionDelete" style="color:var(--stamp-rust); border-color:rgba(154,59,40,0.3);">✕ Delete</button>`;
-  html += `<a id="clearSelectionLink" style="margin-left:8px; font-weight:500;">Clear</a>`;
+  html += `<button class="btn btn-outline btn-small" id="actionDelete" style="color:var(--stamp-rust); border-color:rgba(154,59,40,0.3);">✕ Delete</button>`;
+  html += `<a id="clearSelectionLink" style="font-size:0.75rem; text-decoration:underline; cursor:pointer; margin-left:4px;">Clear</a>`;
   
   bar.innerHTML = html;
 
@@ -1371,8 +1383,8 @@ function renderStatement(){
     let body='';
     rows.forEach(r=>{
       let maturityCell = fmtDate(r.maturity);
-      if(r.fd.broken) maturityCell = `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
-      if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
+      if(r.fd.broken) maturityCell = `<span>${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;text-decoration:none;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
+      if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;text-decoration:none;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
       
       const inactiveClass = (r.status === 'matured' || r.status === 'settled' || r.status === 'broken') ? 'row-inactive' : '';
 
