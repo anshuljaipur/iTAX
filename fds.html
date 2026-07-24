@@ -150,6 +150,13 @@ select.filter, input.filter{
 input.filter{min-width:170px;}
 .toolbar .spacer{flex:1;}
 
+/* Selection Action Bar */
+.selection-bar{
+  background: var(--paper-raised); padding: 6px 14px; border: 1px dashed var(--brass); 
+  border-radius: var(--radius); display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.selection-bar a{color:var(--ink);text-decoration:underline;cursor:pointer; font-size: 0.75rem;}
+
 /* empty state */
 .empty-card{
   border:1px dashed var(--paper-line);background:var(--paper-raised);padding:40px 20px;text-align:center;
@@ -163,7 +170,7 @@ input.filter{min-width:170px;}
   overflow-x:auto; border:1px solid var(--paper-line); background:var(--paper-raised);
   -webkit-overflow-scrolling: touch;
 }
-table{border-collapse:collapse;width:100%;min-width:1080px;}
+table{border-collapse:collapse;width:100%;min-width:980px;}
 thead th{
   text-align:left;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);
   padding:12px 14px;border-bottom:1px solid var(--paper-line);background:var(--paper);position:sticky;top:0;
@@ -174,19 +181,22 @@ thead th .arrow{opacity:0.5;margin-left:4px;font-size:0.6rem;}
 tbody td{padding:12px 14px;border-bottom:1px solid var(--paper-line);font-size:0.86rem;vertical-align:middle;white-space:nowrap;}
 tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover{background:rgba(169,128,61,0.06);}
+
+/* Matured / Inactive Row Styling */
+tbody tr.row-inactive { opacity: 0.65; background: rgba(0,0,0,0.015); }
+tbody tr.row-inactive:hover { opacity: 0.95; background: rgba(169,128,61,0.06); }
+
 td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
+
+/* Wrapped Interest Column */
+td.interest-cell { white-space: normal; line-height: 1.35; font-size: 0.8rem; min-width: 115px; max-width: 150px; }
+
 .holder-chip{display:inline-flex;align-items:center;gap:6px;font-size:0.82rem;}
 .holder-chip .dot{width:7px;height:7px;border-radius:50%;flex:none;}
 .bank-cell .bank-name{font-weight:600;}
 .bank-cell .note{display:block;font-size:0.75rem;color:var(--ink-soft);margin-top:2px;}
 .gain-pos{color:var(--stamp-green);}
 .gain-neg{color:var(--stamp-rust);}
-.row-actions{display:flex;gap:8px; align-items:center;}
-.icon-btn{
-  border:1px solid var(--paper-line);background:var(--paper);width:32px;height:32px;border-radius:4px;
-  display:inline-flex;align-items:center;justify-content:center;font-size:0.85rem;color:var(--ink-soft);
-}
-.icon-btn:hover{border-color:var(--brass);color:var(--brass-deep);}
 
 .badge{
   display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;
@@ -199,8 +209,6 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 .badge.broken{color:#8A5A2B;border-style:dashed;}
 .badge.settled{color:#5A7A3C;border-style:dashed;}
 
-.selection-bar{display:flex;align-items:center;gap:12px;font-size:0.78rem;color:var(--brass-deep);}
-.selection-bar a{color:var(--ink);text-decoration:underline;cursor:pointer;}
 .rowcheck, #selectAllCheck{width:18px;height:18px;cursor:pointer;}
 
 /* ===== PERSON MINI CARDS ===== */
@@ -216,7 +224,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
 .statement-head h2{font-family:'Fraunces',serif;margin:0 0 6px;font-size:1.5rem;}
 .statement-head .meta{font-size:0.8rem;color:var(--ink-soft);}
 .statement-actions{display:flex;gap:8px; flex-wrap:wrap;}
-.btn-outline{border:1px solid var(--ink);background:none;color:var(--ink);padding:10px 14px;border-radius:var(--radius);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;}
+.btn-outline{border:1px solid var(--ink);background:none;color:var(--ink);padding:10px 14px;border-radius:var(--radius);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;font-weight:600; cursor:pointer;}
 .btn-outline:hover{background:var(--ink);color:var(--paper);}
 .statement-group-title{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--brass-deep);margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--paper-line);}
 .statement-totals{margin-top:20px;border-top:2px solid var(--ink);padding-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;}
@@ -268,7 +276,6 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
   .cover-top{flex-direction:column; gap:16px;}
   .cover-actions{width:100%; justify-content:flex-start;}
   .summary-strip{grid-template-columns: 1fr 1fr;}
-  table{min-width:920px;}
 }
 
 @media print{
@@ -333,8 +340,7 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
           <label>Status</label>
           <select class="filter" id="filterStatus">
             <option value="all">All</option>
-            <option value="active">Active</option>
-            <option value="soon">Maturing soon (30d)</option>
+            <option value="active">Active (incl. Soon)</option>
             <option value="matured">Matured (Action needed)</option>
             <option value="settled">Settled / Renewed</option>
             <option value="broken">Broken</option>
@@ -344,8 +350,10 @@ td.num, th.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
           <label>Search bank</label>
           <input class="filter" id="filterSearch" placeholder="e.g. HDFC, SBI...">
         </div>
+        
         <div class="spacer"></div>
         <div class="selection-bar" id="selectionBar" hidden></div>
+        
         <div class="field-group">
           <label>&nbsp;</label>
           <div style="display:flex;gap:8px;">
@@ -929,7 +937,6 @@ function getInterestAndTdsInFY(fd, fyStart, fyEnd) {
   let grossInterest = 0;
   let tdsDeducted = 0;
 
-  // Check logged payouts in this FY first (skip the maturity payout flag to avoid counting principal)
   if(fd.payouts && Array.isArray(fd.payouts)) {
     fd.payouts.forEach(p => {
       if (p.isMaturity) return; 
@@ -941,7 +948,6 @@ function getInterestAndTdsInFY(fd, fyStart, fyEnd) {
     });
   }
 
-  // For cumulative FDs or FDs with no transaction log, compute mathematical accrual over overlap
   if (isCumulative(fd) || (!fd.payouts || fd.payouts.length === 0)) {
     const periodStart = start > fyStart ? start : fyStart;
     const periodEnd = mat < fyEnd ? mat : fyEnd;
@@ -953,7 +959,6 @@ function getInterestAndTdsInFY(fd, fyStart, fyEnd) {
     }
   }
 
-  // Include settlement TDS if settled within this FY
   if (fd.settled && fd.tdsDeducted) {
     const matDate = parseDate(fd.maturityDate);
     if (matDate >= fyStart && matDate <= fyEnd) {
@@ -986,6 +991,12 @@ function getEnrichedDeposits(){
 function sortList(list){
   const key = state.sortKey, dir = state.sortDir === 'asc' ? 1 : -1;
   list.sort((a,b)=>{
+    // Always push matured, settled, and broken items to the bottom of the active view
+    const aInactive = (a.status === 'matured' || a.status === 'settled' || a.status === 'broken') ? 1 : 0;
+    const bInactive = (b.status === 'matured' || b.status === 'settled' || b.status === 'broken') ? 1 : 0;
+    
+    if (aInactive !== bInactive) return aInactive - bInactive;
+
     let av, bv;
     switch(key){
       case 'bank': av=a.fd.bank.toLowerCase(); bv=b.fd.bank.toLowerCase(); break;
@@ -1016,7 +1027,12 @@ function getFilteredSorted(){
     list = list.filter(r => r.fd.personId === state.activePerson);
   }
   if(state.filterStatus !== 'all'){
-    list = list.filter(r => r.status === state.filterStatus);
+    // Exception: "active" filter now means explicitly Active OR Soon
+    if (state.filterStatus === 'active') {
+       list = list.filter(r => r.status === 'active' || r.status === 'soon');
+    } else {
+       list = list.filter(r => r.status === state.filterStatus);
+    }
   }
   if(state.search.trim()){
     const q = state.search.trim().toLowerCase();
@@ -1034,17 +1050,22 @@ function getExportRows(){
 }
 
 function computeAggregates(list){
-  const agg = {count:list.length, totalPrincipal:0, totalCurrent:0, totalMaturity:0, maturingSoon:0, totalPaidOut:0};
+  const agg = {count:list.length, totalPrincipal:0, totalCurrent:0, totalMaturity:0, maturingSoon:0, totalPaidOut:0, totalGain:0};
   let wEirNum=0, wArrNum=0;
+  
   list.forEach(r=>{
-    agg.totalPrincipal += r.fd.principal;
-    agg.totalCurrent += r.cv;
-    agg.totalMaturity += r.mv;
-    agg.totalPaidOut += r.payoutsTotal;
+    // Exclude matured/settled/broken from top Principal and CV summary
+    if (r.status === 'active' || r.status === 'soon') {
+        agg.totalPrincipal += r.fd.principal;
+        agg.totalCurrent += r.cv;
+        agg.totalMaturity += r.mv;
+        agg.totalPaidOut += r.payoutsTotal;
+        wEirNum += r.eir * r.fd.principal;
+        wArrNum += r.arr * r.fd.principal;
+    }
     if(r.status==='soon') agg.maturingSoon++;
-    wEirNum += r.eir * r.fd.principal;
-    wArrNum += r.arr * r.fd.principal;
   });
+  
   agg.totalGain = (agg.totalCurrent - agg.totalPrincipal) + agg.totalPaidOut;
   agg.weightedEir = agg.totalPrincipal>0 ? wEirNum/agg.totalPrincipal : 0;
   agg.weightedArr = agg.totalPrincipal>0 ? wArrNum/agg.totalPrincipal : 0;
@@ -1065,7 +1086,7 @@ function renderHero(){
     <div class="summary-cell"><div class="label">Weighted ARR</div><div class="value small">${fmtPct(agg.weightedArr)}</div></div>
     <div class="summary-cell"><div class="label">Deposits</div><div class="value small">${agg.count} ${agg.maturingSoon>0?`<span style="color:#e08a76;font-size:0.7rem;">(${agg.maturingSoon} soon)</span>`:''}</div></div>
   `;
-  document.getElementById('summaryScope').innerHTML = `Showing: <b>${scopeName}</b>${state.filterStatus!=='all' ? ' · Status: <b>'+statusLabel(state.filterStatus)+'</b>' : ''}${state.search? ' · Bank search: <b>"'+state.search+'"</b>':''}`;
+  document.getElementById('summaryScope').innerHTML = `Showing: <b>${scopeName}</b>${state.filterStatus!=='all' ? ' · Status: <b>'+statusLabel(state.filterStatus)+'</b>' : ''}${state.search? ' · Bank search: <b>"'+state.search+'"</b>':''} · <i>Excludes matured/settled items from totals</i>`;
 }
 
 function renderTabs(){
@@ -1095,7 +1116,8 @@ function renderPersonGrid(){
   const today = new Date(); today.setHours(0,0,0,0);
   let html='';
   state.people.forEach((p,idx)=>{
-    const list = state.deposits.filter(fd=>fd.personId===p.id).map(fd=>({
+    // Base mini card values on active policies only for accuracy against top bar
+    const list = state.deposits.filter(fd=>fd.personId===p.id && statusOf(fd, today) !== 'matured' && statusOf(fd, today) !== 'settled' && statusOf(fd, today) !== 'broken').map(fd=>({
       fd, cv: currentValue(fd,today)
     }));
     const principal = list.reduce((s,r)=>s+r.fd.principal,0);
@@ -1107,7 +1129,7 @@ function renderPersonGrid(){
           <button class="icon-btn" data-delperson="${p.id}" title="Remove">✕</button>
         </span>
       </div>
-      <div class="prow"><span>Deposits</span><b>${list.length}</b></div>
+      <div class="prow"><span>Active Deposits</span><b>${list.length}</b></div>
       <div class="prow"><span>Principal</span><b>${fmtCurrency(principal)}</b></div>
       <div class="prow"><span>Current value</span><b>${fmtCurrency(current)}</b></div>
     </div>`;
@@ -1174,8 +1196,7 @@ const COLUMNS = [
   {key:'arr', label:'ARR', num:true},
   {key:'startDate', label:'Start'},
   {key:'maturityDate', label:'Maturity / Break'},
-  {key:'status', label:'Status'},
-  {key:'actions', label:''}
+  {key:'status', label:'Status'}
 ];
 
 function renderLedgerTable(){
@@ -1191,7 +1212,6 @@ function renderLedgerTable(){
   }
   const list = getFilteredSorted();
   let head = '<tr>' + COLUMNS.map(c=>{
-    if(c.key==='actions') return `<th></th>`;
     if(c.key==='select') return `<th class="no-print"><input type="checkbox" id="selectAllCheck"></th>`;
     const arrow = state.sortKey===c.key ? `<span class="arrow">${state.sortDir==='asc'?'▲':'▼'}</span>` : '';
     return `<th class="${c.num?'num':''}" data-sort="${c.key}">${c.label}${arrow}</th>`;
@@ -1209,16 +1229,10 @@ function renderLedgerTable(){
       if(r.fd.broken) maturityCell = `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
       if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
 
-      let actions = `
-        <button class="icon-btn" data-payoutfd="${r.fd.id}" title="Log Interest Payouts" style="color:var(--brass-deep); border-color:var(--paper-line); font-weight:700;">₹</button>
-        <button class="icon-btn" data-editfd="${r.fd.id}" title="Edit">✎</button>
-        <button class="icon-btn" data-delfd="${r.fd.id}" title="Delete">✕</button>`;
-      
-      if(r.status === 'matured' && !r.fd.settled) {
-        actions = `<button class="btn-outline btn-small" style="color:var(--stamp-rust); border-color:var(--stamp-rust); margin-right:8px;" data-settlefd="${r.fd.id}">Settle</button>` + actions;
-      }
+      // Define CSS class for inactive rows to push visual focus down
+      const inactiveClass = (r.status === 'matured' || r.status === 'settled' || r.status === 'broken') ? 'row-inactive' : '';
 
-      body += `<tr>
+      body += `<tr class="${inactiveClass}">
         <td class="no-print"><input type="checkbox" class="rowcheck" data-id="${r.fd.id}" ${state.selected.has(r.fd.id)?'checked':''}></td>
         <td class="bank-cell">
           <span class="bank-name">${escapeHtml(r.fd.bank)}</span>
@@ -1228,7 +1242,7 @@ function renderLedgerTable(){
         <td><span class="holder-chip"><span class="dot" style="background:${personColor(idx)}"></span>${escapeHtml(r.person?r.person.name:'—')}</span></td>
         <td class="num">${fmtCurrency(r.fd.principal)}</td>
         <td class="num">${r.fd.rate.toFixed(2)}%</td>
-        <td>${interestLabel(r.fd)}</td>
+        <td class="interest-cell">${interestLabel(r.fd)}</td>
         <td class="num">${fmtPct(r.eir)}</td>
         <td class="num" style="color:var(--brass-deep);">${fmtCurrency(r.payoutsTotal)}</td>
         <td class="num ${gainClass}">${fmtCurrency(r.cv)}</td>
@@ -1237,7 +1251,6 @@ function renderLedgerTable(){
         <td class="mono">${fmtDate(r.start)}</td>
         <td class="mono">${maturityCell}</td>
         <td><span class="badge ${r.status}">${statusLabel(r.status)}</span></td>
-        <td class="no-print"><div class="row-actions">${actions}</div></td>
       </tr>`;
     });
   }
@@ -1250,27 +1263,6 @@ function renderLedgerTable(){
       if(state.sortKey===key){ state.sortDir = state.sortDir==='asc'?'desc':'asc'; }
       else { state.sortKey = key; state.sortDir = 'asc'; }
       renderLedgerTable();
-      renderHero();
-    });
-  });
-  holder.querySelectorAll('[data-payoutfd]').forEach(el=>{ el.addEventListener('click', ()=> openPayoutModal(el.getAttribute('data-payoutfd'))); });
-  holder.querySelectorAll('[data-editfd]').forEach(el=>{ el.addEventListener('click', ()=> openFdModal(el.getAttribute('data-editfd'))); });
-  holder.querySelectorAll('[data-settlefd]').forEach(el=>{ el.addEventListener('click', ()=> openSettleModal(el.getAttribute('data-settlefd'))); });
-  
-  holder.querySelectorAll('[data-delfd]').forEach(el=>{
-    el.addEventListener('click', async ()=>{
-      if(!currentUser) return;
-      const id = el.getAttribute('data-delfd');
-      if(confirm('Delete this deposit record?')){
-        try {
-          await db.collection('users').doc(currentUser.uid).collection('deposits').doc(id).delete();
-          state.deposits = state.deposits.filter(d=>d.id!==id);
-          state.selected.delete(id);
-          renderAll();
-        } catch (err) {
-          alert('Error deleting: ' + err.message);
-        }
-      }
     });
   });
 
@@ -1301,7 +1293,53 @@ function renderSelectionInfo(){
   const bar = document.getElementById('selectionBar');
   if(state.selected.size===0){ bar.hidden = true; bar.innerHTML=''; return; }
   bar.hidden = false;
-  bar.innerHTML = `${state.selected.size} selected · exports will use only these <a id="clearSelectionLink">Clear</a>`;
+  
+  let html = `<span style="color:var(--ink); font-weight:600; font-size:0.85rem;">${state.selected.size} Selected</span> <span style="color:var(--paper-line);">|</span> `;
+  
+  if(state.selected.size === 1) {
+    const fdId = Array.from(state.selected)[0];
+    const r = getEnrichedDeposits().find(x=>x.fd.id === fdId);
+    
+    // Settle Button
+    if (r && r.status === 'matured' && !r.fd.settled) {
+      html += `<button class="btn-outline btn-small" id="actionSettle" style="color:var(--stamp-rust); border-color:var(--stamp-rust);">Settle</button>`;
+    }
+    
+    html += `<button class="btn-outline btn-small" id="actionPayout" style="color:var(--brass-deep); border-color:var(--brass-deep);">₹ Payouts</button>`;
+    html += `<button class="btn-outline btn-small" id="actionEdit">✎ Edit</button>`;
+  }
+  
+  html += `<button class="btn-outline btn-small" id="actionDelete" style="color:var(--stamp-rust); border-color:rgba(154,59,40,0.3);">✕ Delete</button>`;
+  html += `<a id="clearSelectionLink" style="margin-left:8px; font-weight:500;">Clear</a>`;
+  
+  bar.innerHTML = html;
+
+  // Bind universal action events
+  if(state.selected.size === 1){
+    const fdId = Array.from(state.selected)[0];
+    const btnSettle = document.getElementById('actionSettle');
+    if(btnSettle) btnSettle.addEventListener('click', () => openSettleModal(fdId));
+    document.getElementById('actionPayout').addEventListener('click', () => openPayoutModal(fdId));
+    document.getElementById('actionEdit').addEventListener('click', () => openFdModal(fdId));
+  }
+  
+  document.getElementById('actionDelete').addEventListener('click', async () => {
+    if(!currentUser) return;
+    if(confirm(`Are you sure you want to delete ${state.selected.size} selected deposit(s)?`)){
+      try {
+        const batchIds = Array.from(state.selected);
+        for(let id of batchIds) {
+          await db.collection('users').doc(currentUser.uid).collection('deposits').doc(id).delete();
+          state.deposits = state.deposits.filter(d=>d.id!==id);
+        }
+        state.selected.clear();
+        renderAll();
+      } catch (err) {
+        alert('Error deleting: ' + err.message);
+      }
+    }
+  });
+
   document.getElementById('clearSelectionLink').addEventListener('click', ()=>{
     state.selected.clear();
     renderLedgerTable();
@@ -1336,12 +1374,14 @@ function renderStatement(){
       if(r.fd.broken) maturityCell = `<span style="text-decoration:line-through;color:var(--ink-soft);">${fmtDate(parseDate(r.fd.maturityDate))}</span><br><span style="color:var(--stamp-rust);font-size:0.7rem;">Broken ${fmtDate(parseDate(r.fd.breakDate))}</span>`;
       if(r.fd.settled) maturityCell = `<span style="color:#5A7A3C;font-weight:600;">Settled ${fmtDate(parseDate(r.fd.maturityDate))}</span>`;
       
-      body += `<tr>
+      const inactiveClass = (r.status === 'matured' || r.status === 'settled' || r.status === 'broken') ? 'row-inactive' : '';
+
+      body += `<tr class="${inactiveClass}">
         <td class="bank-cell"><span class="bank-name">${escapeHtml(r.fd.bank)}</span>${r.fd.note?`<span class="note">${escapeHtml(r.fd.note)}</span>`:''}</td>
         ${showHolder?`<td>${escapeHtml(r.person?r.person.name:'—')}</td>`:''}
         <td class="num">${fmtCurrency(r.fd.principal)}</td>
         <td class="num">${r.fd.rate.toFixed(2)}%</td>
-        <td>${interestLabel(r.fd)}</td>
+        <td class="interest-cell">${interestLabel(r.fd)}</td>
         <td class="num">${fmtPct(r.eir)}</td>
         <td class="num" style="color:var(--brass-deep);">${fmtCurrency(r.payoutsTotal)}</td>
         <td class="num">${fmtCurrency(r.cv)}</td>
@@ -1383,18 +1423,18 @@ function renderStatement(){
     }
   }
 
-  html += `<div class="statement-footnote"><b>Note:</b> Current Value reflects accrued value as of ${generated}, capped at maturity (or break date for broken deposits). Where a bank-quoted maturity value was entered, or a deposit was broken, current value is interpolated in a straight line toward the final figure. For "Paid out" deposits, interest is disbursed to the account rather than reinvested, so EIR equals the nominal rate. EIR and ARR are annualised figures — see the Ledger tab legend for definitions.</div>`;
+  html += `<div class="statement-footnote"><b>Note:</b> Current Value reflects accrued value as of ${generated}, capped at maturity (or break date for broken deposits). Where a bank-quoted maturity value was entered, or a deposit was broken, current value is interpolated in a straight line toward the final figure. For "Paid out" deposits, interest is disbursed to the account rather than reinvested, so EIR equals the nominal rate. EIR and ARR are annualised figures — see the Ledger tab legend for definitions. Top summary totals strictly exclude FDs with 'Matured' or 'Settled' statuses.</div>`;
 
   content.innerHTML = html;
 }
 
 function renderStatementTotals(agg){
   return `<div class="statement-totals">
-    <div><div class="t-label">Total Principal</div><div class="t-value">${fmtCurrency(agg.totalPrincipal)}</div></div>
-    <div><div class="t-label">Total Current Value</div><div class="t-value">${fmtCurrency(agg.totalCurrent)}</div></div>
-    <div><div class="t-label">Total Gain + Payouts</div><div class="t-value">${fmtCurrency(agg.totalGain)}</div></div>
-    <div><div class="t-label">Weighted EIR</div><div class="t-value">${fmtPct(agg.weightedEir)}</div></div>
-    <div><div class="t-label">Weighted ARR</div><div class="t-value">${fmtPct(agg.weightedArr)}</div></div>
+    <div><div class="t-label">Active Principal</div><div class="t-value">${fmtCurrency(agg.totalPrincipal)}</div></div>
+    <div><div class="t-label">Active Current Value</div><div class="t-value">${fmtCurrency(agg.totalCurrent)}</div></div>
+    <div><div class="t-label">Active Gain + Payouts</div><div class="t-value">${fmtCurrency(agg.totalGain)}</div></div>
+    <div><div class="t-label">Active Weighted EIR</div><div class="t-value">${fmtPct(agg.weightedEir)}</div></div>
+    <div><div class="t-label">Active Weighted ARR</div><div class="t-value">${fmtPct(agg.weightedArr)}</div></div>
   </div>`;
 }
 
@@ -1602,7 +1642,6 @@ function renderPayoutTable(fd) {
   const sorted = [...fd.payouts].sort((a,b) => parseDate(b.date) - parseDate(a.date));
   let html = '';
   sorted.forEach(p => {
-    // If this is a final maturity payout, style it uniquely
     if (p.isMaturity) {
        html += `<tr style="background: rgba(201,162,75,0.1);">
         <td class="mono">${fmtDate(parseDate(p.date))}<br><span style="font-size:0.65rem; color:var(--brass-deep); font-family:'Inter', sans-serif; font-weight:600;">MATURITY PAYOUT</span></td>
@@ -1947,7 +1986,7 @@ function exportStatementPDF(){
     });
     const agg = computeAggregates(all);
     doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(20);
-    doc.text(`Total Principal: ${fmtCurrencyPdf(agg.totalPrincipal)}   Total Current Value: ${fmtCurrencyPdf(agg.totalCurrent)}   Weighted EIR: ${fmtPct(agg.weightedEir)}   Weighted ARR: ${fmtPct(agg.weightedArr)}`, 40, y);
+    doc.text(`Active Principal: ${fmtCurrencyPdf(agg.totalPrincipal)}   Active Current Value: ${fmtCurrencyPdf(agg.totalCurrent)}   Weighted EIR: ${fmtPct(agg.weightedEir)}   Weighted ARR: ${fmtPct(agg.weightedArr)}`, 40, y);
   } else {
     const person = personById(state.statementPerson);
     const rows = all.filter(r=>r.fd.personId===person.id);
@@ -1966,7 +2005,7 @@ function exportStatementPDF(){
     y = doc.lastAutoTable.finalY + 22;
     const agg = computeAggregates(rows);
     doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(20);
-    doc.text(`Total Principal: ${fmtCurrencyPdf(agg.totalPrincipal)}   Total Current Value: ${fmtCurrencyPdf(agg.totalCurrent)}   Weighted EIR: ${fmtPct(agg.weightedEir)}   Weighted ARR: ${fmtPct(agg.weightedArr)}`, 40, y);
+    doc.text(`Active Principal: ${fmtCurrencyPdf(agg.totalPrincipal)}   Active Current Value: ${fmtCurrencyPdf(agg.totalCurrent)}   Weighted EIR: ${fmtPct(agg.weightedEir)}   Weighted ARR: ${fmtPct(agg.weightedArr)}`, 40, y);
   }
   const name = state.statementPerson==='all' ? 'all-family' : (personById(state.statementPerson)?.name||'statement');
   doc.save(`fd-statement-${name.toLowerCase().replace(/\s+/g,'-')}.pdf`);
@@ -2088,6 +2127,7 @@ document.getElementById('fdForm').addEventListener('submit', async (e)=>{
       state.deposits.push(record);
     }
     closeFdModal();
+    state.selected.clear();
     renderAll();
   } catch(err) {
     alert("Error saving deposit: " + err.message);
@@ -2189,6 +2229,7 @@ document.getElementById('settleForm').addEventListener('submit', async (e)=>{
     }
 
     closeSettleModal();
+    state.selected.clear();
     renderAll();
   } catch (err) {
     alert("Error settling deposit: " + err.message);
